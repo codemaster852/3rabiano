@@ -42,20 +42,22 @@
         .code-history, .code-live-preview { flex: 1; overflow-y: auto; background-color: #1e1f20; border-radius: 8px; }
         #code-preview-iframe { width: 100%; height: 100%; border: none; border-radius: 8px; background-color: white; }
         .code-preview-header { background-color: #282a2b; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .copy-code-btn { background-color: #4a4a4a; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-        .copy-code-btn:hover { background-color: #5a5a5a; }
+        .action-btn { background-color: #4a4a4a; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .action-btn:hover { background-color: #5a5a5a; }
         #image-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(256px, 1fr)); gap: 1rem; }
         .gallery-item { position: relative; }
-        .gallery-item img { width: 100%; height: auto; border-radius: 8px; }
-        .gallery-item .model-label { position: absolute; bottom: 8px; left: 8px; background-color: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .gallery-item img { width: 100%; height: auto; border-radius: 8px; display: block; }
+        .gallery-item .gallery-item-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s; display: flex; justify-content: center; align-items: center; }
+        .gallery-item:hover .gallery-item-overlay { opacity: 1; }
         .feature-panel { background-color: #1e1f20; padding: 1.5rem; border-radius: 0.5rem; }
-        .feature-panel h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; }
+        .feature-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .feature-panel h3 { font-size: 1.25rem; font-weight: 600; margin: 0; }
         .feature-panel textarea, .feature-panel input { width: 100%; background-color: #131314; border: 1px solid #333; border-radius: 0.5rem; padding: 0.75rem; color: #e3e3e3; }
         .feature-panel textarea { min-height: 100px; }
         .feature-panel button { background-color: #4285F4; color: white; font-weight: bold; padding: 0.5rem 1rem; border-radius: 0.5rem; width: 100%; margin-top: 1rem; }
         .feature-panel button:hover { background-color: #3367D6; }
         .result-box { margin-top: 1.5rem; background-color: #131314; padding: 1rem; border-radius: 0.5rem; min-height: 100px; white-space: pre-wrap; }
-        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #333; }
+        .tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #333; }
         .tab { padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; }
         .tab.active { border-bottom-color: #4285F4; color: #4285F4; }
         .typing-indicator span { height: 8px; width: 8px; background-color: #9ca3af; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; }
@@ -141,7 +143,9 @@
                 <div class="islamic-grid">
                     <!-- Prayer Times -->
                     <div class="islamic-feature-card col-span-1 md:col-span-2">
-                        <h3 class="flex items-center"><i class="fas fa-clock ml-3"></i>أوقات الصلاة</h3>
+                        <div class="feature-panel-header">
+                            <h3 class="flex items-center"><i class="fas fa-clock ml-3"></i>أوقات الصلاة</h3>
+                        </div>
                         <p class="text-sm text-gray-500 mb-4">لمدينة دمنهور، مصر بتاريخ ٢٥ يوليو ٢٠٢٥</p>
                         <div id="prayer-times-list">
                             <div class="prayer-time"><span>الفجر</span><span>٤:٠٨ ص</span></div>
@@ -167,21 +171,30 @@
 
                     <!-- Verse of the Day -->
                     <div class="islamic-feature-card">
-                        <h3 class="flex items-center"><i class="fas fa-quran ml-3"></i>آية اليوم</h3>
+                        <div class="feature-panel-header">
+                            <h3 class="flex items-center"><i class="fas fa-quran ml-3"></i>آية اليوم</h3>
+                            <button class="action-btn download-btn" data-target="verse-of-the-day" data-filename="verse.txt"><i class="fas fa-download"></i></button>
+                        </div>
                         <div id="verse-of-the-day" class="result-box text-lg italic">"فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ"<br><span class="text-sm not-italic text-gray-400">- سورة البقرة، آية ١٥٢</span></div>
                         <button id="new-verse-btn" class="mt-4 w-full">آية جديدة</button>
                     </div>
 
                     <!-- Hadith of the Day -->
                     <div class="islamic-feature-card">
-                        <h3 class="flex items-center"><i class="fas fa-book-open ml-3"></i>حديث اليوم</h3>
+                        <div class="feature-panel-header">
+                            <h3 class="flex items-center"><i class="fas fa-book-open ml-3"></i>حديث اليوم</h3>
+                            <button class="action-btn download-btn" data-target="hadith-of-the-day" data-filename="hadith.txt"><i class="fas fa-download"></i></button>
+                        </div>
                         <div id="hadith-of-the-day" class="result-box italic">"خيركم خيركم لأهله."<br><span class="text-sm not-italic text-gray-400">- الترمذي</span></div>
                         <button id="new-hadith-btn" class="mt-4 w-full">حديث جديد</button>
                     </div>
                     
                     <!-- Islamic Q&A -->
                     <div class="islamic-feature-card col-span-1 md:col-span-3">
-                         <h3 class="flex items-center"><i class="fas fa-question-circle ml-3"></i>سؤال وجواب إسلامي</h3>
+                         <div class="feature-panel-header">
+                            <h3 class="flex items-center"><i class="fas fa-question-circle ml-3"></i>سؤال وجواب إسلامي</h3>
+                            <button class="action-btn download-btn hidden" data-target="islamic-qa-result" data-filename="islamic-qa.txt"><i class="fas fa-download"></i></button>
+                        </div>
                          <textarea id="islamic-qa-prompt" placeholder="اسأل سؤالاً عن الإسلام..."></textarea>
                          <button id="islamic-qa-btn" class="zone-generate-btn" data-prompt-id="islamic-qa-prompt" data-result-id="islamic-qa-result">احصل على إجابة</button>
                          <div id="islamic-qa-result" class="result-box"></div>
@@ -236,46 +249,46 @@
                         <h2 class="text-3xl font-bold">🧠 Study Zone</h2>
                     </div>
                     <div class="space-y-6">
-                        <div class="feature-panel"><h3>AI Tutor</h3><textarea id="ai-tutor-prompt" placeholder="Ask anything in math, science, languages..."></textarea><button data-prompt-id="ai-tutor-prompt" data-result-id="ai-tutor-result" class="zone-generate-btn">Get Answer</button><div id="ai-tutor-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>Notes & Flashcards Generator</h3><textarea id="notes-flashcards-prompt" placeholder="Paste your text here to generate notes and flashcards..."></textarea><button data-prompt-id="notes-flashcards-prompt" data-result-id="notes-flashcards-result" class="zone-generate-btn">Generate</button><div id="notes-flashcards-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>Quiz Maker</h3><textarea id="quiz-maker-prompt" placeholder="Enter a topic or paste text to create a quiz..."></textarea><button data-prompt-id="quiz-maker-prompt" data-result-id="quiz-maker-result" class="zone-generate-btn">Create Quiz</button><div id="quiz-maker-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>PDF Summarizer</h3><input type="file" id="pdf-upload" accept=".pdf" class="mb-4"><textarea id="pdf-summarizer-prompt" placeholder="Or paste text from a document here..."></textarea><button data-prompt-id="pdf-summarizer-prompt" data-result-id="pdf-summarizer-result" class="zone-generate-btn">Summarize</button><div id="pdf-summarizer-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>AI Tutor</h3><button class="action-btn download-btn hidden" data-target="ai-tutor-result" data-filename="ai-tutor.txt"><i class="fas fa-download"></i></button></div><textarea id="ai-tutor-prompt" placeholder="Ask anything in math, science, languages..."></textarea><button data-prompt-id="ai-tutor-prompt" data-result-id="ai-tutor-result" class="zone-generate-btn">Get Answer</button><div id="ai-tutor-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>Notes & Flashcards Generator</h3><button class="action-btn download-btn hidden" data-target="notes-flashcards-result" data-filename="notes.txt"><i class="fas fa-download"></i></button></div><textarea id="notes-flashcards-prompt" placeholder="Paste your text here to generate notes and flashcards..."></textarea><button data-prompt-id="notes-flashcards-prompt" data-result-id="notes-flashcards-result" class="zone-generate-btn">Generate</button><div id="notes-flashcards-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>Quiz Maker</h3><button class="action-btn download-btn hidden" data-target="quiz-maker-result" data-filename="quiz.txt"><i class="fas fa-download"></i></button></div><textarea id="quiz-maker-prompt" placeholder="Enter a topic or paste text to create a quiz..."></textarea><button data-prompt-id="quiz-maker-prompt" data-result-id="quiz-maker-result" class="zone-generate-btn">Create Quiz</button><div id="quiz-maker-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>PDF Summarizer</h3><button class="action-btn download-btn hidden" data-target="pdf-summarizer-result" data-filename="summary.txt"><i class="fas fa-download"></i></button></div><input type="file" id="pdf-upload" accept=".pdf" class="mb-4"><textarea id="pdf-summarizer-prompt" placeholder="Or paste text from a document here..."></textarea><button data-prompt-id="pdf-summarizer-prompt" data-result-id="pdf-summarizer-result" class="zone-generate-btn">Summarize</button><div id="pdf-summarizer-result" class="result-box"></div></div>
                     </div>
                 </div>
 
                 <div id="work-zone-detail" class="zone-detail hidden">
                      <div class="zone-detail-header"><button class="back-to-zones-btn"><i class="fas fa-arrow-left"></i></button><h2 class="text-3xl font-bold">💼 Work Zone</h2></div>
                      <div class="space-y-6">
-                        <div class="feature-panel"><h3>AI Resume & Cover Letter Writer</h3><textarea id="resume-prompt" placeholder="Paste your job description and key skills..."></textarea><button data-prompt-id="resume-prompt" data-result-id="resume-result" class="zone-generate-btn">Generate</button><div id="resume-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>Email Generator</h3><textarea id="email-prompt" placeholder="Describe the email you need (e.g., a follow-up email to a client about a project)..."></textarea><button data-prompt-id="email-prompt" data-result-id="email-result" class="zone-generate-btn">Generate Email</button><div id="email-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>Business Idea Generator</h3><textarea id="business-idea-prompt" placeholder="Enter your interests or an industry..."></textarea><button data-prompt-id="business-idea-prompt" data-result-id="business-idea-result" class="zone-generate-btn">Get Ideas</button><div id="business-idea-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>AI Resume & Cover Letter Writer</h3><button class="action-btn download-btn hidden" data-target="resume-result" data-filename="resume.txt"><i class="fas fa-download"></i></button></div><textarea id="resume-prompt" placeholder="Paste your job description and key skills..."></textarea><button data-prompt-id="resume-prompt" data-result-id="resume-result" class="zone-generate-btn">Generate</button><div id="resume-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>Email Generator</h3><button class="action-btn download-btn hidden" data-target="email-result" data-filename="email.txt"><i class="fas fa-download"></i></button></div><textarea id="email-prompt" placeholder="Describe the email you need (e.g., a follow-up email to a client about a project)..."></textarea><button data-prompt-id="email-prompt" data-result-id="email-result" class="zone-generate-btn">Generate Email</button><div id="email-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>Business Idea Generator</h3><button class="action-btn download-btn hidden" data-target="business-idea-result" data-filename="ideas.txt"><i class="fas fa-download"></i></button></div><textarea id="business-idea-prompt" placeholder="Enter your interests or an industry..."></textarea><button data-prompt-id="business-idea-prompt" data-result-id="business-idea-result" class="zone-generate-btn">Get Ideas</button><div id="business-idea-result" class="result-box"></div></div>
                      </div>
                 </div>
                 
                 <div id="kitchen-zone-detail" class="zone-detail hidden">
                      <div class="zone-detail-header"><button class="back-to-zones-btn"><i class="fas fa-arrow-left"></i></button><h2 class="text-3xl font-bold">🍳 Kitchen Zone</h2></div>
                      <div class="space-y-6">
-                        <div class="feature-panel"><h3>Recipe Generator</h3><textarea id="recipe-prompt" placeholder="List the ingredients you have..."></textarea><button data-prompt-id="recipe-prompt" data-result-id="recipe-result" class="zone-generate-btn">Find Recipes</button><div id="recipe-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>Meal Planner</h3><textarea id="meal-plan-prompt" placeholder="Describe your dietary needs and for how many days (e.g., 5-day low-carb plan)..."></textarea><button data-prompt-id="meal-plan-prompt" data-result-id="meal-plan-result" class="zone-generate-btn">Create Plan</button><div id="meal-plan-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>"Ask the Chef" AI Chat</h3><textarea id="chef-chat-prompt" placeholder="Ask a cooking question (e.g., how to perfectly sear a steak?)..."></textarea><button data-prompt-id="chef-chat-prompt" data-result-id="chef-chat-result" class="zone-generate-btn">Ask</button><div id="chef-chat-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>Recipe Generator</h3><button class="action-btn download-btn hidden" data-target="recipe-result" data-filename="recipes.txt"><i class="fas fa-download"></i></button></div><textarea id="recipe-prompt" placeholder="List the ingredients you have..."></textarea><button data-prompt-id="recipe-prompt" data-result-id="recipe-result" class="zone-generate-btn">Find Recipes</button><div id="recipe-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>Meal Planner</h3><button class="action-btn download-btn hidden" data-target="meal-plan-result" data-filename="meal-plan.txt"><i class="fas fa-download"></i></button></div><textarea id="meal-plan-prompt" placeholder="Describe your dietary needs and for how many days (e.g., 5-day low-carb plan)..."></textarea><button data-prompt-id="meal-plan-prompt" data-result-id="meal-plan-result" class="zone-generate-btn">Create Plan</button><div id="meal-plan-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>"Ask the Chef" AI Chat</h3><button class="action-btn download-btn hidden" data-target="chef-chat-result" data-filename="chef-qa.txt"><i class="fas fa-download"></i></button></div><textarea id="chef-chat-prompt" placeholder="Ask a cooking question (e.g., how to perfectly sear a steak?)..."></textarea><button data-prompt-id="chef-chat-prompt" data-result-id="chef-chat-result" class="zone-generate-btn">Ask</button><div id="chef-chat-result" class="result-box"></div></div>
                      </div>
                 </div>
 
                 <div id="fun-zone-detail" class="zone-detail hidden">
                      <div class="zone-detail-header"><button class="back-to-zones-btn"><i class="fas fa-arrow-left"></i></button><h2 class="text-3xl font-bold">🎮 Fun Zone</h2></div>
                      <div class="space-y-6">
-                        <div class="feature-panel"><h3>AI Joke / Meme Generator</h3><textarea id="joke-prompt" placeholder="Enter a topic for a joke (e.g., computers, cats)..."></textarea><button data-prompt-id="joke-prompt" data-result-id="joke-result" class="zone-generate-btn">Tell me a Joke</button><div id="joke-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>Story & Comic Maker</h3><textarea id="story-prompt" placeholder="Start a story or describe a comic scene..."></textarea><button data-prompt-id="story-prompt" data-result-id="story-result" class="zone-generate-btn">Generate</button><div id="story-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>Avatar / Cartoon Creator</h3><textarea id="avatar-prompt" placeholder="Describe the character you want to create..."></textarea><button data-prompt-id="avatar-prompt" data-result-id="avatar-result" class="zone-generate-btn">Create Avatar (SVG)</button><div id="avatar-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>AI Joke / Meme Generator</h3><button class="action-btn download-btn hidden" data-target="joke-result" data-filename="joke.txt"><i class="fas fa-download"></i></button></div><textarea id="joke-prompt" placeholder="Enter a topic for a joke (e.g., computers, cats)..."></textarea><button data-prompt-id="joke-prompt" data-result-id="joke-result" class="zone-generate-btn">Tell me a Joke</button><div id="joke-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>Story & Comic Maker</h3><button class="action-btn download-btn hidden" data-target="story-result" data-filename="story.txt"><i class="fas fa-download"></i></button></div><textarea id="story-prompt" placeholder="Start a story or describe a comic scene..."></textarea><button data-prompt-id="story-prompt" data-result-id="story-result" class="zone-generate-btn">Generate</button><div id="story-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>Avatar / Cartoon Creator</h3><button class="action-btn download-btn hidden" data-target="avatar-result" data-filename="avatar.svg"><i class="fas fa-download"></i></button></div><textarea id="avatar-prompt" placeholder="Describe the character you want to create..."></textarea><button data-prompt-id="avatar-prompt" data-result-id="avatar-result" class="zone-generate-btn">Create Avatar (SVG)</button><div id="avatar-result" class="result-box"></div></div>
                      </div>
                 </div>
 
                 <div id="mind-zone-detail" class="zone-detail hidden">
                      <div class="zone-detail-header"><button class="back-to-zones-btn"><i class="fas fa-arrow-left"></i></button><h2 class="text-3xl font-bold">🧘 Mind Zone</h2></div>
                      <div class="space-y-6">
-                        <div class="feature-panel"><h3>AI Therapist (Chatbot)</h3><textarea id="therapist-prompt" placeholder="How are you feeling today? You can talk about anything on your mind."></textarea><button data-prompt-id="therapist-prompt" data-result-id="therapist-result" class="zone-generate-btn">Chat</button><div id="therapist-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>Daily Journal Generator</h3><textarea id="journal-prompt" placeholder="What was the highlight of your day? Or, enter a topic you'd like to reflect on."></textarea><button data-prompt-id="journal-prompt" data-result-id="journal-result" class="zone-generate-btn">Generate Entry</button><div id="journal-result" class="result-box"></div></div>
-                        <div class="feature-panel"><h3>Gratitude Prompts</h3><button id="gratitude-btn" class="zone-generate-btn" data-result-id="gratitude-result">Get a Prompt</button><div id="gratitude-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>AI Therapist (Chatbot)</h3><button class="action-btn download-btn hidden" data-target="therapist-result" data-filename="therapist-chat.txt"><i class="fas fa-download"></i></button></div><textarea id="therapist-prompt" placeholder="How are you feeling today? You can talk about anything on your mind."></textarea><button data-prompt-id="therapist-prompt" data-result-id="therapist-result" class="zone-generate-btn">Chat</button><div id="therapist-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>Daily Journal Generator</h3><button class="action-btn download-btn hidden" data-target="journal-result" data-filename="journal.txt"><i class="fas fa-download"></i></button></div><textarea id="journal-prompt" placeholder="What was the highlight of your day? Or, enter a topic you'd like to reflect on."></textarea><button data-prompt-id="journal-prompt" data-result-id="journal-result" class="zone-generate-btn">Generate Entry</button><div id="journal-result" class="result-box"></div></div>
+                        <div class="feature-panel"><div class="feature-panel-header"><h3>Gratitude Prompts</h3><button class="action-btn download-btn hidden" data-target="gratitude-result" data-filename="gratitude-prompt.txt"><i class="fas fa-download"></i></button></div><button id="gratitude-btn" class="zone-generate-btn" data-result-id="gratitude-result">Get a Prompt</button><div id="gratitude-result" class="result-box"></div></div>
                      </div>
                 </div>
                 
@@ -296,6 +309,8 @@
                 <h2 class="text-3xl font-bold mb-6">Generations</h2>
                 <div class="tabs generation-tabs">
                     <div class="tab generation-tab active" data-gen-tab="photo">Photo</div>
+                    <div class="tab generation-tab" data-gen-tab="text">Text</div>
+                    <div class="tab generation-tab" data-gen-tab="ideas">Ideas</div>
                     <div class="tab generation-tab" data-gen-tab="video">Video</div>
                     <div class="tab generation-tab" data-gen-tab="voice">Voice</div>
                     <div class="tab generation-tab" data-gen-tab="qrcode">QR Code</div>
@@ -307,6 +322,37 @@
                         <button id="generate-image-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Generate Image</button>
                         <div id="image-loading" class="text-center my-4 hidden"><div class="typing-indicator"><span></span><span></span><span></span></div></div>
                         <div id="image-gallery" class="mt-6"></div>
+                    </div>
+                </div>
+
+                <div id="text-gen-tab" class="gen-tab-content hidden">
+                    <div class="feature-panel">
+                        <div class="feature-panel-header">
+                            <h3>Text Generation</h3>
+                            <button class="action-btn download-btn hidden" data-target="text-gen-result" data-filename="generated-text.txt"><i class="fas fa-download"></i></button>
+                        </div>
+                        <select id="text-type-select" class="w-full bg-[#131314] border border-gray-600 rounded-lg p-3 mb-4">
+                            <option value="email">Email</option>
+                            <option value="letter">Letter</option>
+                            <option value="poem">Poem</option>
+                            <option value="article">Article</option>
+                            <option value="social media post">Social Media Post</option>
+                        </select>
+                        <textarea id="text-gen-prompt" placeholder="Describe what the text should be about..."></textarea>
+                        <button id="generate-text-btn" class="zone-generate-btn" data-prompt-id="text-gen-prompt" data-result-id="text-gen-result">Generate Text</button>
+                        <div id="text-gen-result" class="result-box"></div>
+                    </div>
+                </div>
+
+                <div id="ideas-gen-tab" class="gen-tab-content hidden">
+                    <div class="feature-panel">
+                        <div class="feature-panel-header">
+                            <h3>Idea Generation</h3>
+                            <button class="action-btn download-btn hidden" data-target="ideas-gen-result" data-filename="ideas.txt"><i class="fas fa-download"></i></button>
+                        </div>
+                        <textarea id="ideas-gen-prompt" placeholder="Enter a topic to brainstorm ideas for..."></textarea>
+                        <button id="generate-ideas-btn" class="zone-generate-btn" data-prompt-id="ideas-gen-prompt" data-result-id="ideas-gen-result">Generate Ideas</button>
+                        <div id="ideas-gen-result" class="result-box"></div>
                     </div>
                 </div>
 
@@ -329,6 +375,7 @@
                          <input type="text" id="qrcode-prompt" class="w-full bg-[#131314] border border-gray-600 rounded-lg p-3 mb-4" placeholder="Enter text or URL for QR code...">
                          <button id="generate-qrcode-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Generate QR Code</button>
                          <div id="qrcode-output" class="mt-6 p-4 bg-white rounded-lg flex justify-center items-center"></div>
+                         <button id="download-qrcode-btn" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg w-full hidden">Download QR Code</button>
                      </div>
                 </div>
             </div>
@@ -347,7 +394,10 @@
                      <div class="code-preview-container">
                          <div id="code-history" class="code-history p-4"></div>
                          <div class="code-live-preview">
-                             <div class="code-preview-header"><span>Live Preview</span></div>
+                             <div class="code-preview-header">
+                                <span>Live Preview</span>
+                                <button class="action-btn" id="download-code-btn"><i class="fas fa-download"></i> Download</button>
+                            </div>
                              <iframe id="code-preview-iframe"></iframe>
                          </div>
                      </div>
@@ -356,7 +406,7 @@
 
                  <div id="workplace-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
                      <div class="feature-panel flex-grow flex flex-col">
-                         <h3>AI Workplace</h3>
+                         <div class="feature-panel-header"><h3>AI Workplace</h3><button class="action-btn download-btn hidden" data-target="workplace-result" data-filename="ai-help.txt"><i class="fas fa-download"></i></button></div>
                          <textarea id="workplace-editor" class="flex-grow font-mono" placeholder="Write your HTML, CSS, and JavaScript here..."></textarea>
                          <button id="workplace-help-btn">Ask AI for Help</button>
                          <div id="workplace-result" class="result-box hidden"></div>
@@ -365,7 +415,7 @@
 
                  <div id="explainer-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
                      <div class="feature-panel flex-grow flex flex-col">
-                         <h3>AI Code Explainer</h3>
+                         <div class="feature-panel-header"><h3>AI Code Explainer</h3><button class="action-btn download-btn hidden" data-target="explainer-output" data-filename="code-explanation.txt"><i class="fas fa-download"></i></button></div>
                          <textarea id="explainer-input" class="flex-grow font-mono" placeholder="Paste your code here..."></textarea>
                          <button id="explain-code-btn">Explain Code</button>
                          <div id="explainer-output" class="result-box"></div>
@@ -374,7 +424,7 @@
 
                  <div id="expert-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
                      <div class="feature-panel flex-grow flex flex-col">
-                         <h3>Chat with Code Expert</h3>
+                         <div class="feature-panel-header"><h3>Chat with Code Expert</h3><button class="action-btn download-btn" data-target="expert-chat-history" data-filename="expert-chat.html"><i class="fas fa-download"></i></button></div>
                          <div id="expert-chat-history" class="result-box h-64 overflow-y-auto"></div>
                          <div class="flex gap-2 mt-4">
                              <input type="text" id="expert-chat-input" class="flex-grow" placeholder="Ask a coding question...">
@@ -399,7 +449,7 @@
                 <h2 class="text-3xl font-bold mb-6">Educational Tools</h2>
                 <div class="space-y-6">
                     <div class="feature-panel">
-                        <h3>Educational Chat</h3>
+                        <div class="feature-panel-header"><h3>Educational Chat</h3><button class="action-btn download-btn" data-target="educational-chat-history" data-filename="educational-chat.html"><i class="fas fa-download"></i></button></div>
                         <div id="educational-chat-history" class="result-box h-64 overflow-y-auto"></div>
                         <div class="flex gap-2 mt-4">
                             <input type="text" id="educational-chat-input" class="flex-grow" placeholder="Ask a question...">
@@ -407,13 +457,13 @@
                         </div>
                     </div>
                     <div class="feature-panel">
-                        <h3>School Projects</h3>
+                        <div class="feature-panel-header"><h3>School Projects</h3><button class="action-btn download-btn hidden" data-target="project-result" data-filename="project-ideas.txt"><i class="fas fa-download"></i></button></div>
                         <textarea id="project-prompt" placeholder="e.g., a project about the solar system"></textarea>
                         <button id="generate-project-btn">Get Project Ideas</button>
                         <div id="project-result" class="result-box"></div>
                     </div>
                     <div class="feature-panel">
-                        <h3>Math Problem Solver</h3>
+                        <div class="feature-panel-header"><h3>Math Problem Solver</h3><button class="action-btn download-btn hidden" data-target="math-result" data-filename="math-solution.txt"><i class="fas fa-download"></i></button></div>
                         <textarea id="math-prompt" placeholder="e.g., 2x + 5 = 15, what is x?"></textarea>
                         <button id="solve-math-btn">Solve Problem</button>
                         <div id="math-result" class="result-box"></div>
@@ -424,7 +474,7 @@
             <div id="research-feature" class="feature-content hidden">
                 <h2 class="text-3xl font-bold mb-6">Research Assistant</h2>
                 <div class="feature-panel">
-                    <h3>Search & Summarize</h3>
+                    <div class="feature-panel-header"><h3>Search & Summarize</h3><button class="action-btn download-btn hidden" data-target="research-result" data-filename="research.txt"><i class="fas fa-download"></i></button></div>
                     <textarea id="research-prompt" placeholder="Enter a topic to research..."></textarea>
                     <button id="research-btn">Start Research</button>
                     <div id="research-result" class="result-box"></div>
@@ -434,7 +484,7 @@
             <div id="links-feature" class="feature-content hidden">
                 <h2 class="text-3xl font-bold mb-6">Link Security Checker</h2>
                 <div class="feature-panel">
-                    <h3>Check a URL</h3>
+                    <div class="feature-panel-header"><h3>Check a URL</h3><button class="action-btn download-btn hidden" data-target="link-result" data-filename="link-analysis.txt"><i class="fas fa-download"></i></button></div>
                     <input type="text" id="link-prompt" placeholder="Enter a URL to check...">
                     <button id="check-link-btn">Check Link</button>
                     <div id="link-result" class="result-box"></div>
@@ -448,7 +498,7 @@
         // --- API Keys ---
         const GEMINI_API_KEY = "AIzaSyDwlrMesUe4s4LjJJ4HiPqHOzOhkuCkdew";
         const DEEPSEEK_API_KEY = "sk-dc8b5aec2b1f410ca98d740b407290a1";
-        const GROK_API_KEY = "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";
+        const GROK_API_KEY = "xai-sJOKW26kilflD2ToDhNrXD47yzkqjteqD4x1Z53muxZOJrA0VJNyfbt7PV4SCeEhUUyhWk2sTYepsONr"; // Updated as requested
         const ELEVENLABS_API_KEY = "sk_1d42cb84bd2c91e33d337f792f75513f994c980fd0751454";
         const ELEVENLABS_AGENT_ID = "agent_4301k0vq9xmpfffb11tqphxw7bmp";
 
@@ -481,7 +531,7 @@
                     tab.classList.add('active');
                     const tabName = tab.getAttribute(`data-${baseId}-tab`);
                     tabContents.forEach(content => {
-                        if (content.id === `${tabName}-${baseId}-tab`) {
+                        if (content.id === `${tabName}-gen-tab`) { // Adjusted for 'gen' baseId
                             content.classList.remove('hidden');
                         } else {
                             content.classList.add('hidden');
@@ -519,32 +569,36 @@
             document.querySelector('.menu-item[data-feature="code"]').click();
         });
         
-        // Generic handler for all generate buttons within zones
+        // Generic handler for all generate buttons
         document.querySelectorAll('.zone-generate-btn').forEach(button => {
             button.addEventListener('click', async () => {
                 const resultBox = document.getElementById(button.dataset.resultId);
+                const downloadBtn = resultBox.closest('.feature-panel, .islamic-feature-card').querySelector('.download-btn');
                 let prompt = "";
-                // Handle buttons that don't have a prompt input (like Gratitude)
+                
                 if(button.dataset.promptId) {
                     prompt = document.getElementById(button.dataset.promptId).value;
                 } else {
-                    // Custom logic for buttons without a direct prompt input
                     if(button.id === 'gratitude-btn') {
                         prompt = "Give me a single, unique gratitude prompt to reflect on.";
                     }
                 }
 
-                if (!prompt && button.dataset.promptId) return; // Only return if a prompt was expected but not given
+                if (!prompt && button.dataset.promptId) return; 
                 
                 resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+                if(downloadBtn) downloadBtn.classList.add('hidden');
 
-                // Customize prompts for the AI
                 let finalPrompt = prompt;
                 const featureId = button.id;
-
-                // This is where you can create highly specific prompts for each tool
+                
                 if (featureId === 'islamic-qa-btn') {
                     finalPrompt = `أنت عالم إسلامي واسع المعرفة ومحترم. قدم إجابة واضحة وموجزة على السؤال التالي باللغة العربية، مع ذكر المصادر من القرآن والسنة عند الاقتضاء: ${prompt}`;
+                } else if (featureId === 'generate-text-btn') {
+                    const textType = document.getElementById('text-type-select').value;
+                    finalPrompt = `Generate a ${textType} about the following topic: ${prompt}`;
+                } else if (featureId === 'generate-ideas-btn') {
+                    finalPrompt = `Brainstorm a list of creative ideas about: ${prompt}`;
                 } else {
                     const zone = button.closest('.zone-detail')?.id.split('-')[0];
                     const tool = button.dataset.resultId.split('-')[0];
@@ -569,7 +623,8 @@
                             } else {
                                  resultBox.textContent = "Sorry, I couldn't create an avatar for that. Try a simpler description.";
                             }
-                            return; // Exit here as we handled the response differently
+                            if(downloadBtn) downloadBtn.classList.remove('hidden');
+                            return; 
                         }
                     } else if (zone === 'mind') {
                         if (tool === 'therapist') finalPrompt = `You are a compassionate AI companion trained in active listening and providing supportive, non-judgmental responses based on CBT principles. A user has said: "${prompt}". Respond with empathy and an open-ended question. Do not give advice.`;
@@ -579,6 +634,7 @@
 
                 const aiResponse = await generateTextResponse(finalPrompt);
                 resultBox.innerHTML = aiResponse.replace(/\n/g, '<br>');
+                if(downloadBtn) downloadBtn.classList.remove('hidden');
             });
         });
 
@@ -586,7 +642,7 @@
         const verses = [
             { text: `"فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ"`, source: `- سورة البقرة، آية ١٥٢`},
             { text: `"فَإِنَّ مَعَ الْعُسْرِ يُسْرًا"`, source: `- سورة الشرح، آية ٥`},
-            { text: `"وَهُوَ مَعَكُمْ أَيْنَ مَا كُنتُمْ"`, source: `- سورة الحديد، آية ٤`},
+            { text: `"وَهُوَ مَعَكُمْ أَيْنَ مَا kُنتُمْ"`, source: `- سورة الحديد، آية ٤`},
             { text: `"وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا"`, source: `- سورة الطلاق، آية ٢`}
         ];
         const hadiths = [
@@ -624,8 +680,13 @@
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
             try {
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-                if (!response.ok) { const errorData = await response.json(); console.error("Gemini API Error:", errorData); throw new Error(errorData.error.message); }
-                const data = await response.json();
+                const responseText = await response.text();
+                if (!response.ok) { 
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try { const errorData = JSON.parse(responseText); errorMsg = errorData.error.message; } catch (e) { errorMsg = responseText; }
+                    console.error("Gemini API Error:", errorMsg); throw new Error(errorMsg); 
+                }
+                const data = JSON.parse(responseText);
                 if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0].text) { return data.candidates[0].content.parts[0].text; }
                 throw new Error("Invalid response structure from Gemini.");
             } catch (error) { console.error("Gemini Fetch Error:", error); throw error; }
@@ -639,8 +700,13 @@
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` },
                     body: JSON.stringify({ model: "deepseek-chat", messages: [{ "role": "user", "content": prompt }] })
                 });
-                if (!response.ok) { const errorData = await response.json(); console.error("DeepSeek API Error:", errorData); throw new Error(errorData.error.message); }
-                const data = await response.json();
+                const responseText = await response.text();
+                if (!response.ok) { 
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try { const errorData = JSON.parse(responseText); errorMsg = errorData.error.message; } catch (e) { errorMsg = responseText; }
+                    console.error("DeepSeek API Error:", errorMsg); throw new Error(errorMsg); 
+                }
+                const data = JSON.parse(responseText);
                 if (data.choices && data.choices[0]) { return data.choices[0].message.content; }
                 throw new Error("Invalid response structure from DeepSeek.");
             } catch (error) { console.error("DeepSeek Fetch Error:", error); throw error; }
@@ -654,8 +720,13 @@
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROK_API_KEY}` },
                     body: JSON.stringify({ model: "gemma-7b-it", messages: [{ "role": "user", "content": prompt }] })
                 });
-                if (!response.ok) { const errorData = await response.json(); console.error("Grok API Error:", errorData); throw new Error(errorData.error.message); }
-                const data = await response.json();
+                const responseText = await response.text();
+                if (!response.ok) { 
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try { const errorData = JSON.parse(responseText); errorMsg = errorData.error.message; } catch (e) { errorMsg = responseText; }
+                    console.error("Grok API Error:", errorMsg); throw new Error(errorMsg); 
+                }
+                const data = JSON.parse(responseText);
                 if (data.choices && data.choices[0]) { return data.choices[0].message.content; }
                 throw new Error("Invalid response structure from Grok.");
             } catch (error) { console.error("Grok Fetch Error:", error); throw error; }
@@ -666,8 +737,13 @@
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             try {
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-                if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error.message); }
-                const data = await response.json();
+                const responseText = await response.text();
+                if (!response.ok) {
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try { const errorData = JSON.parse(responseText); errorMsg = errorData.error.message; } catch (e) { errorMsg = responseText; }
+                    throw new Error(errorMsg);
+                }
+                const data = JSON.parse(responseText);
                 if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0].text) { return data.candidates[0].content.parts[0].text; }
                 throw new Error("Invalid response from built-in model.");
             } catch (error) { console.error("Built-in model error:", error); throw error; }
@@ -700,21 +776,75 @@
         
         // --- Image Generation ---
         const imagePrompt = document.getElementById('image-prompt'), generateImageBtn = document.getElementById('generate-image-btn'), imageGallery = document.getElementById('image-gallery'), imageLoading = document.getElementById('image-loading');
-        generateImageBtn.addEventListener('click', async () => {
-            const prompt = imagePrompt.value.trim(); if (!prompt) return;
-            imageGallery.innerHTML = ''; imageLoading.classList.remove('hidden');
-            const result = await callImagenSVG(prompt);
-            imageLoading.classList.add('hidden');
-            if (result && result.url) {
-                const galleryItem = document.createElement('div'); galleryItem.className = 'gallery-item';
-                const img = document.createElement('img'); img.src = result.url;
-                const label = document.createElement('div'); label.className = 'model-label'; label.textContent = result.model;
-                galleryItem.append(img, label); imageGallery.appendChild(galleryItem);
-            } else {
-                imageGallery.innerHTML = '<p class="text-red-400 col-span-full text-center">Failed to generate image. Please try a different prompt.</p>';
+        
+        async function generateImage() {
+            const prompt = imagePrompt.value.trim();
+            if (!prompt) return;
+
+            imageGallery.innerHTML = '';
+            imageLoading.classList.remove('hidden');
+
+            const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } };
+            const apiKey = ""; // This will be handled by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const responseText = await response.text();
+
+                if (!response.ok) {
+                    let errorMsg = `Failed to generate image. Server responded with: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        errorMsg = errorData.error?.message || JSON.stringify(errorData);
+                    } catch (e) {
+                        // Not a JSON error, use the raw text if available
+                        if(responseText) errorMsg = responseText;
+                    }
+                    console.error("Image Generation API Error:", errorMsg);
+                    throw new Error(errorMsg);
+                }
+
+                const result = JSON.parse(responseText);
+                
+                if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                    const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                    const galleryItem = document.createElement('div');
+                    galleryItem.className = 'gallery-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
+
+                    const overlay = document.createElement('div');
+                    overlay.className = 'gallery-item-overlay';
+
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = imageUrl;
+                    downloadLink.download = `${prompt.substring(0, 20)}.png`;
+                    downloadLink.className = 'action-btn';
+                    downloadLink.innerHTML = '<i class="fas fa-download"></i> Download';
+                    
+                    overlay.appendChild(downloadLink);
+                    galleryItem.append(img, overlay);
+                    imageGallery.appendChild(galleryItem);
+                } else {
+                    throw new Error("Invalid response structure from image generation API.");
+                }
+
+            } catch (error) {
+                console.error("Image Generation Fetch Error:", error);
+                imageGallery.innerHTML = `<p class="text-red-400 col-span-full text-center">${error.message}</p>`;
+            } finally {
+                imageLoading.classList.add('hidden');
             }
-        });
-        async function callImagenSVG(prompt) { const svgPrompt = `Create a simple, self-contained SVG vector graphic representing: "${prompt}". The SVG must have a viewBox="0 0 100 100" and use basic shapes and colors. Output ONLY the raw <svg> tag and its content. Do not include XML declarations or markdown backticks.`; try { const rawResponse = await generateTextResponse(svgPrompt); if (typeof rawResponse !== 'string' || rawResponse.startsWith("Error:")) { console.error("SVG Generation Error:", rawResponse); return null; } const svgMatch = rawResponse.match(/<svg[\s\S]*?<\/svg>/); if (!svgMatch) { console.error("SVG Generation Error: No SVG tag found.", rawResponse); return null; } return { url: `data:image/svg+xml;base64,${btoa(svgMatch[0])}`, model: '3rabiano (SVG)' }; } catch (error) { console.error("SVG Generation Fetch Error:", error); return null; } }
+        }
+
+        generateImageBtn.addEventListener('click', generateImage);
         
         // --- Voice Generation (TTS) ---
         const voiceTextPrompt = document.getElementById('voice-text-prompt'), generateVoiceBtn = document.getElementById('generate-voice-btn'), voiceOutput = document.getElementById('voice-output');
@@ -732,11 +862,21 @@
         async function callElevenlabsTTS(text) { if (!ELEVENLABS_API_KEY) return null; const voiceId = '21m00Tcm4TlvDq8ikWAM'; const apiUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`; try { const response = await fetch(apiUrl, { method: 'POST', headers: { 'Accept': 'audio/mpeg', 'Content-Type': 'application/json', 'xi-api-key': ELEVENLABS_API_KEY }, body: JSON.stringify({ text: text, model_id: 'eleven_monolingual_v1' }) }); if (!response.ok) { console.error("ElevenLabs TTS Error:", await response.json()); return null; } return await response.blob(); } catch (error) { console.error("ElevenLabs TTS Fetch Error:", error); return null; } }
 
         // --- QR Code Generation ---
-        const qrcodePrompt = document.getElementById('qrcode-prompt'), generateQrcodeBtn = document.getElementById('generate-qrcode-btn'), qrcodeOutput = document.getElementById('qrcode-output');
+        const qrcodePrompt = document.getElementById('qrcode-prompt'), generateQrcodeBtn = document.getElementById('generate-qrcode-btn'), qrcodeOutput = document.getElementById('qrcode-output'), downloadQrcodeBtn = document.getElementById('download-qrcode-btn');
         generateQrcodeBtn.addEventListener('click', () => {
             const text = qrcodePrompt.value.trim(); if (!text) return;
             qrcodeOutput.innerHTML = '';
             new QRCode(qrcodeOutput, { text: text, width: 256, height: 256 });
+            downloadQrcodeBtn.classList.remove('hidden');
+        });
+        downloadQrcodeBtn.addEventListener('click', () => {
+            const canvas = qrcodeOutput.querySelector('canvas');
+            if (canvas) {
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL('image/png');
+                a.download = 'qrcode.png';
+                a.click();
+            }
         });
 
         // --- Text Chat ---
@@ -748,9 +888,44 @@
 
         // --- Code Generation ---
         const codeInput = document.getElementById('code-input'), codeHistory = document.getElementById('code-history'), codePreviewIframe = document.getElementById('code-preview-iframe');
+        let latestGeneratedCode = '';
         codeInput.addEventListener('keypress', async (e) => { if (e.key === 'Enter') { const prompt = codeInput.value.trim(); if (!prompt) return; appendCodeMessage(`> ${prompt}`, 'user'); codeInput.value = ''; const codePrompt = `Generate a single, complete HTML file with CSS and JS for the following prompt. The code should be self-contained and ready to run. Do not include any explanation, comments, or markdown backticks. Just the raw code. Prompt: ${prompt}`; const typingIndicator = appendCodeMessage('<div class="typing-indicator"><span></span><span></span><span></span></div>', 'ai'); const codeResponse = await generateTextResponse(codePrompt); typingIndicator.remove(); appendCodeMessage(codeResponse, 'ai'); } });
-        function appendCodeMessage(code, sender) { if (sender === 'user') { const pre = document.createElement('pre'); pre.className = 'p-4 rounded-lg mb-4 whitespace-pre-wrap break-words bg-[#282a2b] text-gray-300'; pre.textContent = code; codeHistory.appendChild(pre); return pre; } else { if(code.includes('typing-indicator')) { const indicator = document.createElement('div'); indicator.innerHTML = code; codeHistory.appendChild(indicator); return indicator; } const cleanedCode = (typeof code === 'string') ? code.replace(/```[\w\s]*\n/g, '').replace(/```/g, '').trim() : "/* Error: Could not generate code. */"; const previewContainer = document.createElement('div'); previewContainer.className = 'code-preview'; const header = document.createElement('div'); header.className = 'code-preview-header'; const copyBtn = document.createElement('button'); copyBtn.className = 'copy-code-btn'; copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy'; copyBtn.onclick = () => { navigator.clipboard.writeText(cleanedCode).then(() => { copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!'; setTimeout(() => { copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000); }); }; header.appendChild(copyBtn); const pre = document.createElement('pre'); pre.className = 'p-4 whitespace-pre-wrap break-words'; const codeElement = document.createElement('code'); codeElement.textContent = cleanedCode; pre.appendChild(codeElement); previewContainer.append(header, pre); codeHistory.appendChild(previewContainer); codePreviewIframe.srcdoc = cleanedCode; } codeHistory.scrollTop = codeHistory.scrollHeight; }
+        function appendCodeMessage(code, sender) { if (sender === 'user') { const pre = document.createElement('pre'); pre.className = 'p-4 rounded-lg mb-4 whitespace-pre-wrap break-words bg-[#282a2b] text-gray-300'; pre.textContent = code; codeHistory.appendChild(pre); return pre; } else { if(code.includes('typing-indicator')) { const indicator = document.createElement('div'); indicator.innerHTML = code; codeHistory.appendChild(indicator); return indicator; } const cleanedCode = (typeof code === 'string') ? code.replace(/```[\w\s]*\n/g, '').replace(/```/g, '').trim() : "/* Error: Could not generate code. */"; latestGeneratedCode = cleanedCode; const previewContainer = document.createElement('div'); previewContainer.className = 'code-preview'; const header = document.createElement('div'); header.className = 'code-preview-header'; const copyBtn = document.createElement('button'); copyBtn.className = 'action-btn'; copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy'; copyBtn.onclick = () => { navigator.clipboard.writeText(cleanedCode).then(() => { copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!'; setTimeout(() => { copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000); }); }; header.appendChild(copyBtn); const pre = document.createElement('pre'); pre.className = 'p-4 whitespace-pre-wrap break-words'; const codeElement = document.createElement('code'); codeElement.textContent = cleanedCode; pre.appendChild(codeElement); previewContainer.append(header, pre); codeHistory.appendChild(previewContainer); codePreviewIframe.srcdoc = cleanedCode; } codeHistory.scrollTop = codeHistory.scrollHeight; }
         
+        // --- Download Logic ---
+        function downloadContent(content, filename, mimeType = 'text/plain') {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        document.querySelectorAll('.download-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.dataset.target;
+                const filename = button.dataset.filename;
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    const isHtml = filename.endsWith('.html');
+                    const content = isHtml ? targetElement.innerHTML : targetElement.innerText;
+                    const mimeType = isHtml ? 'text/html' : 'text/plain';
+                    downloadContent(content, filename, mimeType);
+                }
+            });
+        });
+        
+        document.getElementById('download-code-btn').addEventListener('click', () => {
+            if(latestGeneratedCode) {
+                downloadContent(latestGeneratedCode, 'code.html', 'text/html');
+            }
+        });
+
+
         // --- AI Workplace ---
         const workplaceEditor = document.getElementById('workplace-editor');
         const workplaceHelpBtn = document.getElementById('workplace-help-btn');
@@ -763,6 +938,7 @@
             const helpPrompt = `I'm working on this code. Can you help me improve it or suggest what to do next?\n\n${code}`;
             const aiResponse = await generateTextResponse(helpPrompt);
             workplaceResult.textContent = aiResponse;
+            workplaceResult.closest('.feature-panel').querySelector('.download-btn').classList.remove('hidden');
         });
 
         // --- Code Explainer ---
@@ -775,6 +951,7 @@
             explainerOutput.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
             const explainPrompt = `Explain this code:\n\n${code}`;
             explainerOutput.textContent = await generateTextResponse(explainPrompt);
+            explainerOutput.closest('.feature-panel').querySelector('.download-btn').classList.remove('hidden');
         });
 
         // --- Code Expert Chat ---
@@ -830,14 +1007,14 @@
             return messageDiv;
         }
 
-        document.getElementById('generate-project-btn').addEventListener('click', async () => { const prompt = document.getElementById('project-prompt').value; const resultBox = document.getElementById('project-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Provide school project ideas for: ${prompt}`); });
-        document.getElementById('solve-math-btn').addEventListener('click', async () => { const prompt = document.getElementById('math-prompt').value; const resultBox = document.getElementById('math-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Solve this math problem: ${prompt}`); });
+        document.getElementById('generate-project-btn').addEventListener('click', async () => { const prompt = document.getElementById('project-prompt').value; const resultBox = document.getElementById('project-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Provide school project ideas for: ${prompt}`); resultBox.closest('.feature-panel').querySelector('.download-btn').classList.remove('hidden'); });
+        document.getElementById('solve-math-btn').addEventListener('click', async () => { const prompt = document.getElementById('math-prompt').value; const resultBox = document.getElementById('math-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Solve this math problem: ${prompt}`); resultBox.closest('.feature-panel').querySelector('.download-btn').classList.remove('hidden'); });
 
         // --- Research Tool ---
-        document.getElementById('research-btn').addEventListener('click', async () => { const prompt = document.getElementById('research-prompt').value; const resultBox = document.getElementById('research-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Search Google for "${prompt}" and provide a detailed summary of the top results.`); });
+        document.getElementById('research-btn').addEventListener('click', async () => { const prompt = document.getElementById('research-prompt').value; const resultBox = document.getElementById('research-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Search Google for "${prompt}" and provide a detailed summary of the top results.`); resultBox.closest('.feature-panel').querySelector('.download-btn').classList.remove('hidden'); });
 
         // --- Link Checker ---
-        document.getElementById('check-link-btn').addEventListener('click', async () => { const prompt = document.getElementById('link-prompt').value; const resultBox = document.getElementById('link-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Analyze the URL "${prompt}" for potential security threats like phishing, malware, or scams. Provide a safety rating (e.g., Safe, Suspicious, Dangerous) and explain your reasoning.`); });
+        document.getElementById('check-link-btn').addEventListener('click', async () => { const prompt = document.getElementById('link-prompt').value; const resultBox = document.getElementById('link-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Analyze the URL "${prompt}" for potential security threats like phishing, malware, or scams. Provide a safety rating (e.g., Safe, Suspicious, Dangerous) and explain your reasoning.`); resultBox.closest('.feature-panel').querySelector('.download-btn').classList.remove('hidden'); });
 
         // --- Chess Game Logic ---
         const boardElement = document.getElementById('chess-board'), statusElement = document.getElementById('chess-status'), resetChessBtn = document.getElementById('reset-chess-btn'), difficultySelect = document.getElementById('chess-difficulty');

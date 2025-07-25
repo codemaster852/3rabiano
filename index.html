@@ -515,7 +515,11 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // --- API Keys ---
+        const GEMINI_API_KEY = "AIzaSyDwlrMesUe4s4LjJJ4HiPqHOzOhkuCkdew";
+        const DEEPSEEK_API_KEY = "sk-dc8b5aec2b1f410ca98d740b407290a1";
+        const GROK_API_KEY = "xai-sJOKW26kilflD2ToDhNrXD47yzkqjteqD4x1Z53muxZOJrA0VJNyfbt7PV4SCeEhUUyhWk2sTYepsONr"; // Updated as requested
         const ELEVENLABS_API_KEY = "sk_1d42cb84bd2c91e33d337f792f75513f994c980fd0751454";
+        const ELEVENLABS_AGENT_ID = "agent_4301k0vq9xmpfffb11tqphxw7bmp";
 
         // --- Global State & UI Elements ---
         let voiceModeState = 'idle';
@@ -766,24 +770,102 @@
             }
         }
         
-        // --- Text Generation ---
-        async function generateTextResponse(prompt) {
+        // --- Text Generation APIs with Fallback ---
+        async function callGemini(prompt, model = 'gemini-1.5-flash-latest') {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const responseText = await response.text();
+                if (!response.ok) { 
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try { const errorData = JSON.parse(responseText); errorMsg = errorData.error.message; } catch (e) { errorMsg = responseText; }
+                    console.error("Gemini API Error:", errorMsg); throw new Error(errorMsg); 
+                }
+                const data = JSON.parse(responseText);
+                if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0].text) { return data.candidates[0].content.parts[0].text; }
+                throw new Error("Invalid response structure from Gemini.");
+            } catch (error) { console.error("Gemini Fetch Error:", error); throw error; }
+        }
+
+        async function callDeepSeek(prompt) {
+            const apiUrl = `https://api.deepseek.com/chat/completions`;
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` },
+                    body: JSON.stringify({ model: "deepseek-chat", messages: [{ "role": "user", "content": prompt }] })
+                });
+                const responseText = await response.text();
+                if (!response.ok) { 
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try { const errorData = JSON.parse(responseText); errorMsg = errorData.error.message; } catch (e) { errorMsg = responseText; }
+                    console.error("DeepSeek API Error:", errorMsg); throw new Error(errorMsg); 
+                }
+                const data = JSON.parse(responseText);
+                if (data.choices && data.choices[0]) { return data.choices[0].message.content; }
+                throw new Error("Invalid response structure from DeepSeek.");
+            } catch (error) { console.error("DeepSeek Fetch Error:", error); throw error; }
+        }
+
+        async function callGrok(prompt) {
+            const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROK_API_KEY}` },
+                    body: JSON.stringify({ model: "gemma-7b-it", messages: [{ "role": "user", "content": prompt }] })
+                });
+                const responseText = await response.text();
+                if (!response.ok) { 
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try { const errorData = JSON.parse(responseText); errorMsg = errorData.error.message; } catch (e) { errorMsg = responseText; }
+                    console.error("Grok API Error:", errorMsg); throw new Error(errorMsg); 
+                }
+                const data = JSON.parse(responseText);
+                if (data.choices && data.choices[0]) { return data.choices[0].message.content; }
+                throw new Error("Invalid response structure from Grok.");
+            } catch (error) { console.error("Grok Fetch Error:", error); throw error; }
+        }
+        
+        async function callBuiltInFreeModel(prompt) {
             const apiKey = ""; // No key needed for this environment's free model
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             try {
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-                if (!response.ok) { 
-                    const errorData = await response.json(); 
-                    throw new Error(errorData.error.message); 
+                const responseText = await response.text();
+                if (!response.ok) {
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try { const errorData = JSON.parse(responseText); errorMsg = errorData.error.message; } catch (e) { errorMsg = responseText; }
+                    throw new Error(errorMsg);
                 }
-                const data = await response.json();
-                if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0].text) { 
-                    return data.candidates[0].content.parts[0].text; 
+                const data = JSON.parse(responseText);
+                if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0].text) { return data.candidates[0].content.parts[0].text; }
+                throw new Error("Invalid response from built-in model.");
+            } catch (error) { console.error("Built-in model error:", error); throw error; }
+        }
+
+        async function generateTextResponse(prompt) {
+            try {
+                console.log("Attempting to use built-in free model...");
+                return await callBuiltInFreeModel(prompt);
+            } catch (error) {
+                console.warn("Built-in model failed, falling back to Gemini API...");
+                try {
+                    return await callGemini(prompt);
+                } catch (geminiError) {
+                    console.warn("Gemini failed, falling back to DeepSeek API...");
+                    try {
+                        return await callDeepSeek(prompt);
+                    } catch (deepseekError) {
+                        console.warn("DeepSeek also failed, falling back to Grok API...");
+                        try {
+                            return await callGrok(prompt);
+                        } catch (grokError) {
+                            console.error("All text models failed:", grokError.message);
+                            return "All AI models are currently unavailable. Please check your API keys and account status.";
+                        }
+                    }
                 }
-                throw new Error("Invalid response from model.");
-            } catch (error) { 
-                console.error("Text generation error:", error); 
-                return "Sorry, I'm having trouble connecting to the AI. Please try again later.";
             }
         }
         
@@ -816,6 +898,7 @@
                         const errorData = JSON.parse(responseText);
                         errorMsg = errorData.error?.message || JSON.stringify(errorData);
                     } catch (e) {
+                        // Not a JSON error, use the raw text if available
                         if(responseText) errorMsg = responseText;
                     }
                     console.error("Image Generation API Error:", errorMsg);

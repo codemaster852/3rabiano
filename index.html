@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <!-- Monaco Editor CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/editor/editor.main.css">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #131314; color: #e3e3e3; }
         .main-container { display: flex; height: 100vh; }
@@ -89,6 +91,14 @@
         .south { bottom: 5px; left: 50%; transform: translateX(-50%); }
         .east { top: 50%; right: 5px; transform: translateY(-50%); }
         .west { top: 50%; left: 5px; transform: translateY(-50%); }
+        
+        /* AI Workplace Styling */
+        #workplace-container { display: flex; flex-grow: 1; gap: 1rem; }
+        #workplace-editor-container { flex: 1; display: flex; flex-direction: column; }
+        #workplace-preview-container { flex: 1; display: flex; flex-direction: column; }
+        #workplace-editor { flex-grow: 1; border-radius: 8px; overflow: hidden; }
+        #workplace-preview { width: 100%; flex-grow: 1; border: none; border-radius: 8px; background-color: white; }
+        .workplace-header { background-color: #282a2b; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
@@ -405,12 +415,20 @@
                  </div>
 
                  <div id="workplace-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
-                     <div class="feature-panel flex-grow flex flex-col">
-                         <div class="feature-panel-header"><h3>AI Workplace</h3><button class="action-btn download-btn hidden" data-target="workplace-result" data-filename="ai-help.txt"><i class="fas fa-download"></i></button></div>
-                         <textarea id="workplace-editor" class="flex-grow font-mono" placeholder="Write your HTML, CSS, and JavaScript here..."></textarea>
-                         <button id="workplace-help-btn">Ask AI for Help</button>
-                         <div id="workplace-result" class="result-box hidden"></div>
-                     </div>
+                    <div id="workplace-container">
+                        <div id="workplace-editor-container">
+                            <div class="workplace-header">
+                                <span>Code Editor</span>
+                                <button id="workplace-help-btn" class="action-btn"><i class="fas fa-magic"></i> Ask AI for Help</button>
+                            </div>
+                            <div id="workplace-editor"></div>
+                        </div>
+                        <div id="workplace-preview-container">
+                             <div class="workplace-header"><span>Live Preview</span></div>
+                             <iframe id="workplace-preview"></iframe>
+                        </div>
+                    </div>
+                    <div id="workplace-result" class="result-box hidden"></div>
                  </div>
 
                  <div id="explainer-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
@@ -492,7 +510,8 @@
             </div>
         </div>
     </div>
-
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/loader.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // --- API Keys ---
@@ -506,6 +525,7 @@
         let voiceModeState = 'idle', mediaRecorder, audioChunks = [], conversationAudioQueue = [], isPlaying = false;
         const voiceModeBtn = document.getElementById('voice-mode-btn'), voiceModeOverlay = document.getElementById('voice-mode-overlay'), exitVoiceModeBtn = document.getElementById('exit-voice-mode-btn'), voiceMicCircle = document.getElementById('voice-mic-circle'), voiceModeStatusText = document.getElementById('voice-mode-status-text');
         const menuItems = document.querySelectorAll('.menu-item'), featureContents = document.querySelectorAll('.feature-content');
+        let workplaceEditorInstance = null;
 
         // --- Feature Switching ---
         menuItems.forEach(item => {
@@ -517,6 +537,11 @@
                 featureContents.forEach(content => content.classList.add('hidden'));
                 const contentToShow = document.getElementById(`${feature}-feature`);
                 if (contentToShow) contentToShow.classList.remove('hidden');
+
+                // Initialize Monaco Editor when the Code tab is clicked
+                if (feature === 'code' && !workplaceEditorInstance) {
+                    initializeMonacoEditor();
+                }
             });
         });
 
@@ -531,7 +556,8 @@
                     tab.classList.add('active');
                     const tabName = tab.getAttribute(`data-${baseId}-tab`);
                     tabContents.forEach(content => {
-                        if (content.id === `${tabName}-gen-tab`) { // Adjusted for 'gen' baseId
+                        const expectedId = `${tabName}-${baseId === 'gen' ? 'gen-tab' : 'code-tab'}`;
+                        if (content.id === expectedId) {
                             content.classList.remove('hidden');
                         } else {
                             content.classList.add('hidden');
@@ -927,18 +953,40 @@
 
 
         // --- AI Workplace ---
-        const workplaceEditor = document.getElementById('workplace-editor');
+        function initializeMonacoEditor() {
+            if (workplaceEditorInstance) return;
+            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs' }});
+            require(['vs/editor/editor.main'], () => {
+                workplaceEditorInstance = monaco.editor.create(document.getElementById('workplace-editor'), {
+                    value: `<!DOCTYPE html>\n<html>\n<head>\n  <title>My Page</title>\n  <style>\n    body { background-color: #2d2d2d; color: white; }\n  </style>\n</head>\n<body>\n  <h1>Hello, World!</h1>\n</body>\n</html>`,
+                    language: 'html',
+                    theme: 'vs-dark',
+                    automaticLayout: true
+                });
+
+                const previewFrame = document.getElementById('workplace-preview');
+                
+                const updatePreview = () => {
+                    const code = workplaceEditorInstance.getValue();
+                    previewFrame.srcdoc = code;
+                };
+
+                workplaceEditorInstance.onDidChangeModelContent(updatePreview);
+                updatePreview(); // Initial update
+            });
+        }
+
         const workplaceHelpBtn = document.getElementById('workplace-help-btn');
         const workplaceResult = document.getElementById('workplace-result');
         workplaceHelpBtn.addEventListener('click', async () => {
-            const code = workplaceEditor.value;
+            if (!workplaceEditorInstance) return;
+            const code = workplaceEditorInstance.getValue();
             if (!code) return;
             workplaceResult.classList.remove('hidden');
             workplaceResult.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
-            const helpPrompt = `I'm working on this code. Can you help me improve it or suggest what to do next?\n\n${code}`;
+            const helpPrompt = `I'm working on this code. Can you help me improve it, fix bugs, or suggest what to do next? Provide your suggestions as a list of points.\n\nCode:\n${code}`;
             const aiResponse = await generateTextResponse(helpPrompt);
-            workplaceResult.textContent = aiResponse;
-            workplaceResult.closest('.feature-panel').querySelector('.download-btn').classList.remove('hidden');
+            workplaceResult.innerHTML = aiResponse.replace(/\n/g, '<br>');
         });
 
         // --- Code Explainer ---

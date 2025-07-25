@@ -99,11 +99,6 @@
         #workplace-editor { flex-grow: 1; border-radius: 8px; overflow: hidden; }
         #workplace-preview { width: 100%; flex-grow: 1; border: none; border-radius: 8px; background-color: white; }
         .workplace-header { background-color: #282a2b; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* TTS Button Styling */
-        .text-to-speech-btn { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; padding: 4px; border-radius: 4px; }
-        .text-to-speech-btn:hover { background-color: #374151; color: white; }
-        .text-to-speech-btn i { margin-right: 4px; }
     </style>
 </head>
 <body>
@@ -531,7 +526,7 @@
         const voiceModeBtn = document.getElementById('voice-mode-btn'), voiceModeOverlay = document.getElementById('voice-mode-overlay'), exitVoiceModeBtn = document.getElementById('exit-voice-mode-btn'), voiceMicCircle = document.getElementById('voice-mic-circle'), voiceModeStatusText = document.getElementById('voice-mode-status-text');
         const menuItems = document.querySelectorAll('.menu-item'), featureContents = document.querySelectorAll('.feature-content');
         let workplaceEditorInstance = null;
-        let currentlyPlayingAudio = null;
+        let isVoiceChatActive = false;
 
         // --- Feature Switching ---
         menuItems.forEach(item => {
@@ -710,9 +705,8 @@
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                document.getElementById('chat-input').value = transcript;
-                voiceModeOverlay.style.display = 'none';
-                setVoiceModeUI('idle');
+                setVoiceModeUI('processing', 'Thinking...');
+                handleChat(transcript); // Pass transcript directly to handleChat
             };
 
             recognition.onerror = (event) => {
@@ -731,10 +725,12 @@
 
         voiceModeBtn.addEventListener('click', () => { 
             if (!SpeechRecognition) return;
+            isVoiceChatActive = true;
             voiceModeOverlay.style.display = 'flex'; 
             setVoiceModeUI('idle'); 
         });
         exitVoiceModeBtn.addEventListener('click', () => { 
+            isVoiceChatActive = false;
             voiceModeOverlay.style.display = 'none'; 
             if (voiceModeState === 'listening') stopRecording(); 
         });
@@ -771,58 +767,9 @@
         function stopRecording() {
             if (recognition) {
                 recognition.stop();
-                setVoiceModeUI('processing');
             }
         }
         
-        async function handleTTS(event, textElement) {
-            const button = event.currentTarget;
-            const textToSpeak = textElement.innerText;
-
-            // If an audio is currently playing, stop it.
-            if (currentlyPlayingAudio && !currentlyPlayingAudio.paused) {
-                currentlyPlayingAudio.pause();
-                currentlyPlayingAudio.currentTime = 0;
-                document.querySelectorAll('.text-to-speech-btn i').forEach(icon => icon.className = 'fas fa-play-circle mr-1');
-                
-                // If the clicked button was the one playing, we just stop.
-                if (button.querySelector('i').className.includes('fa-stop-circle')) {
-                     currentlyPlayingAudio = null;
-                     return;
-                }
-            }
-            
-            if (!textToSpeak) return;
-
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>';
-            
-            const audioBlob = await callElevenlabsTTS(textToSpeak);
-            if (audioBlob) {
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio(audioUrl);
-                currentlyPlayingAudio = audio;
-
-                audio.onplaying = () => {
-                    button.innerHTML = '<i class="fas fa-stop-circle mr-1"></i> Stop';
-                };
-                audio.onended = () => {
-                    button.innerHTML = '<i class="fas fa-play-circle mr-1"></i> Read aloud';
-                    currentlyPlayingAudio = null;
-                };
-                audio.onpause = () => {
-                     button.innerHTML = '<i class="fas fa-play-circle mr-1"></i> Read aloud';
-                };
-
-                audio.play().catch(e => {
-                    console.error("Audio playback failed:", e);
-                    button.innerHTML = '<i class="fas fa-exclamation-circle mr-1"></i> Error';
-                });
-            } else {
-                button.innerHTML = '<i class="fas fa-exclamation-circle mr-1"></i> Error';
-            }
-        }
-
-
         // --- Text Generation APIs with Fallback ---
         async function callGemini(prompt, model = 'gemini-1.5-flash-latest') {
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
@@ -1029,24 +976,42 @@
 
         // --- Text Chat ---
         const chatInput = document.getElementById('chat-input'), sendBtn = document.getElementById('send-btn'), chatHistory = document.getElementById('chat-history');
-        async function handleChat() { 
-            const prompt = chatInput.value.trim(); 
+        async function handleChat(promptOverride) { 
+            const prompt = promptOverride || chatInput.value.trim(); 
             if (!prompt) return; 
+            if (!promptOverride) chatInput.value = ''; 
+            
             appendMessage(prompt, 'user'); 
-            chatInput.value = ''; 
             const typingIndicator = appendMessage('<div class="typing-indicator"><span></span><span></span><span></span></div>', 'ai'); 
             const aiResponse = await generateTextResponse(prompt); 
+            
             if (typeof aiResponse === 'string') { 
                 typingIndicator.querySelector('p').innerHTML = aiResponse.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
-                // Show the TTS button now that we have the final text
-                const ttsButton = typingIndicator.querySelector('.text-to-speech-btn');
-                if(ttsButton) ttsButton.style.display = 'flex';
+                
+                if (isVoiceChatActive) {
+                    const audioBlob = await callElevenlabsTTS(aiResponse);
+                    if (audioBlob) {
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
+                        audio.play();
+                        audio.onended = () => {
+                            setVoiceModeUI('idle');
+                            voiceModeOverlay.style.display = 'none';
+                            isVoiceChatActive = false;
+                        };
+                    } else {
+                        setVoiceModeUI('idle', 'Error playing audio.');
+                    }
+                }
             } else { 
                 typingIndicator.querySelector('p').textContent = 'An unexpected error occurred.'; 
+                 if (isVoiceChatActive) {
+                    setVoiceModeUI('idle', 'An error occurred.');
+                }
             } 
         }
         chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleChat(); });
-        sendBtn.addEventListener('click', handleChat);
+        sendBtn.addEventListener('click', () => handleChat());
         
         function appendMessage(text, sender) {
             const messageDiv = document.createElement('div');
@@ -1054,28 +1019,9 @@
             const avatar = document.createElement('div');
             avatar.className = `avatar ${sender === 'user' ? 'user-avatar' : 'ai-avatar'}`;
             avatar.textContent = sender === 'user' ? 'You' : 'A';
-            
-            const messageContentWrapper = document.createElement('div');
-            messageContentWrapper.className = 'flex-grow';
-
             const messageText = document.createElement('p');
             messageText.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            
-            messageContentWrapper.appendChild(messageText);
-
-            if (sender === 'ai') {
-                const ttsButton = document.createElement('button');
-                ttsButton.className = 'text-to-speech-btn mt-2';
-                ttsButton.innerHTML = '<i class="fas fa-play-circle"></i> Read aloud';
-                ttsButton.onclick = (e) => handleTTS(e, messageText);
-                // Hide button for typing indicator
-                if (text.includes('typing-indicator')) {
-                    ttsButton.style.display = 'none';
-                }
-                messageContentWrapper.appendChild(ttsButton);
-            }
-            
-            messageDiv.append(avatar, messageContentWrapper);
+            messageDiv.append(avatar, messageText);
             chatHistory.appendChild(messageDiv);
             chatHistory.scrollTop = chatHistory.scrollHeight;
             return messageDiv;

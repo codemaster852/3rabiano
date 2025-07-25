@@ -1,1 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3rabiano - AI Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #131314; color: #e3e3e3; }
+        .main-container { display: flex; height: 100vh; }
+        .sidebar { width: 250px; background-color: #1e1f20; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+        .content-area { flex-grow: 1; padding: 20px 40px; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; }
+        .chat-input-container { position: sticky; bottom: 0; padding: 20px 0; background-color: #131314; }
+        .chat-input { background-color: #1e1f20; border: 1px solid #333; border-radius: 50px; padding: 15px 25px; color: #e3e3e3; width: 100%; }
+        .menu-item { display: flex; align-items: center; padding: 10px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
+        .menu-item:hover, .menu-item.active { background-color: #282a2b; }
+        .menu-item i { margin-right: 15px; width: 20px; text-align: center; }
+        .chat-message { padding: 15px; border-radius: 12px; margin-bottom: 15px; max-width: 80%; display: flex; align-items: flex-start; }
+        .user-message { background-color: #282a2b; align-self: flex-end; margin-left: auto; }
+        .ai-message { background-color: #1e1f20; align-self: flex-start; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .user-avatar { background-color: #4a4a4a; }
+        .ai-avatar { background: linear-gradient(135deg, #4285F4 0%, #34A853 100%); }
+        .chess-board { width: 400px; height: 400px; display: grid; grid-template-columns: repeat(8, 1fr); border: 2px solid #333; }
+        .chess-square { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 36px; }
+        .chess-square.light { background-color: #f0d9b5; }
+        .chess-square.dark { background-color: #b58863; }
+        .chess-piece { cursor: grab; }
+        .hidden { display: none; }
+        #voice-mode-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(19, 19, 20, 0.98); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #exit-voice-mode-btn { position: absolute; top: 30px; right: 30px; font-size: 24px; cursor: pointer; }
+        #voice-mic-circle { width: 150px; height: 150px; border-radius: 50%; background-color: #4285F4; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
+        #voice-mic-circle.listening { background-color: #d9534f; animation: pulse 1.5s infinite; }
+        #voice-mic-circle:hover { transform: scale(1.05); }
+        #voice-mode-status-text { margin-top: 30px; font-size: 1.2rem; color: #e3e3e3; text-align: center; max-width: 80%; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(217, 83, 79, 0); } 100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); } }
+        select { background-color: #282a2b; color: white; padding: 8px; border-radius: 5px; border: 1px solid #333; }
+        .code-preview-container { display: flex; gap: 1rem; flex-grow: 1; height: calc(100vh - 250px); }
+        .code-history, .code-live-preview { flex: 1; overflow-y: auto; background-color: #1e1f20; border-radius: 8px; }
+        #code-preview-iframe { width: 100%; height: 100%; border: none; border-radius: 8px; background-color: white; }
+        .code-preview-header { background-color: #282a2b; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .copy-code-btn { background-color: #4a4a4a; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .copy-code-btn:hover { background-color: #5a5a5a; }
+        #image-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(256px, 1fr)); gap: 1rem; }
+        .gallery-item { position: relative; }
+        .gallery-item img { width: 100%; height: auto; border-radius: 8px; }
+        .gallery-item .model-label { position: absolute; bottom: 8px; left: 8px; background-color: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .feature-panel { background-color: #1e1f20; padding: 1.5rem; border-radius: 0.5rem; }
+        .feature-panel h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; }
+        .feature-panel textarea, .feature-panel input { width: 100%; background-color: #131314; border: 1px solid #333; border-radius: 0.5rem; padding: 0.75rem; color: #e3e3e3; }
+        .feature-panel textarea { min-height: 100px; }
+        .feature-panel button { background-color: #4285F4; color: white; font-weight: bold; padding: 0.5rem 1rem; border-radius: 0.5rem; width: 100%; margin-top: 1rem; }
+        .feature-panel button:hover { background-color: #3367D6; }
+        .result-box { margin-top: 1.5rem; background-color: #131314; padding: 1rem; border-radius: 0.5rem; min-height: 100px; white-space: pre-wrap; }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #333; }
+        .tab { padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab.active { border-bottom-color: #4285F4; color: #4285F4; }
+        .typing-indicator span { height: 8px; width: 8px; background-color: #9ca3af; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+    </style>
+</head>
+<body>
+    <!-- Full Screen Voice Mode -->
+    <div id="voice-mode-overlay" style="display: none;">
+        <i id="exit-voice-mode-btn" class="fas fa-times"></i>
+        <div id="voice-mic-circle"><i class="fas fa-microphone-alt text-white text-5xl"></i></div>
+        <p id="voice-mode-status-text">Tap the circle to speak</p>
+    </div>
+
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div>
+                <h1 class="text-2xl font-bold mb-8 text-white">3rabiano AI</h1>
+                <nav>
+                    <div class="menu-item active" data-feature="chat"><i class="fas fa-comments"></i><span>Ask Questions</span></div>
+                    <div class="menu-item" data-feature="generations"><i class="fas fa-magic"></i><span>Generations</span></div>
+                    <div class="menu-item" data-feature="code"><i class="fas fa-code"></i><span>Code</span></div>
+                    <div class="menu-item" data-feature="chess"><i class="fas fa-chess"></i><span>Play Chess</span></div>
+                    <div class="menu-item" data-feature="educational"><i class="fas fa-user-graduate"></i><span>Educational</span></div>
+                    <div class="menu-item" data-feature="research"><i class="fas fa-search"></i><span>Research</span></div>
+                    <div class="menu-item" data-feature="links"><i class="fas fa-link"></i><span>Check Links</span></div>
+                </nav>
+            </div>
+            <div><div class="menu-item"><i class="fas fa-cog"></i><span>Settings</span></div></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-area">
+            <!-- Chat Feature -->
+            <div id="chat-feature" class="feature-content">
+                <div id="chat-history" class="flex-grow mb-4">
+                    <div class="ai-message chat-message"><div class="avatar ai-avatar">A</div><p>Hello! I'm 3rabiano. How can I help you today?</p></div>
+                </div>
+                <div class="chat-input-container">
+                    <div class="relative">
+                        <input type="text" id="chat-input" class="chat-input pr-24" placeholder="Ask me anything...">
+                        <button id="send-btn" class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"><i class="fas fa-paper-plane"></i></button>
+                        <button id="voice-mode-btn" class="absolute right-14 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"><i class="fas fa-headphones-alt"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generations Feature -->
+            <div id="generations-feature" class="feature-content hidden">
+                <h2 class="text-3xl font-bold mb-6">Generations</h2>
+                <div class="tabs generation-tabs">
+                    <div class="tab generation-tab active" data-gen-tab="photo">Photo</div>
+                    <div class="tab generation-tab" data-gen-tab="video">Video</div>
+                    <div class="tab generation-tab" data-gen-tab="voice">Voice</div>
+                    <div class="tab generation-tab" data-gen-tab="qrcode">QR Code</div>
+                </div>
+
+                <div id="photo-gen-tab" class="gen-tab-content">
+                    <div class="bg-[#1e1f20] p-6 rounded-lg">
+                        <input type="text" id="image-prompt" class="w-full bg-[#131314] border border-gray-600 rounded-lg p-3 mb-4" placeholder="Describe the image you want to create...">
+                        <button id="generate-image-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Generate Image</button>
+                        <div id="image-loading" class="text-center my-4 hidden"><div class="typing-indicator"><span></span><span></span><span></span></div></div>
+                        <div id="image-gallery" class="mt-6"></div>
+                    </div>
+                </div>
+
+                <div id="video-gen-tab" class="gen-tab-content hidden">
+                     <div class="bg-[#1e1f20] p-6 rounded-lg">
+                        <p class="text-center text-gray-400">Video generation is coming soon!</p>
+                     </div>
+                </div>
+
+                <div id="voice-gen-tab" class="gen-tab-content hidden">
+                     <div class="bg-[#1e1f20] p-6 rounded-lg">
+                        <textarea id="voice-text-prompt" class="w-full bg-[#131314] border border-gray-600 rounded-lg p-3 mb-4" placeholder="Enter text to convert to speech..."></textarea>
+                        <button id="generate-voice-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Generate Voice</button>
+                        <div id="voice-output" class="mt-6"></div>
+                     </div>
+                </div>
+
+                <div id="qrcode-gen-tab" class="gen-tab-content hidden">
+                     <div class="bg-[#1e1f20] p-6 rounded-lg">
+                        <input type="text" id="qrcode-prompt" class="w-full bg-[#131314] border border-gray-600 rounded-lg p-3 mb-4" placeholder="Enter text or URL for QR code...">
+                        <button id="generate-qrcode-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Generate QR Code</button>
+                        <div id="qrcode-output" class="mt-6 p-4 bg-white rounded-lg flex justify-center items-center"></div>
+                     </div>
+                </div>
+            </div>
+
+            <!-- Code Feature -->
+            <div id="code-feature" class="feature-content hidden flex flex-col">
+                 <h2 class="text-3xl font-bold mb-6">Code Tools</h2>
+                 <div class="tabs code-tabs">
+                    <div class="tab code-tab active" data-code-tab="write">Write Code</div>
+                    <div class="tab code-tab" data-code-tab="workplace">AI Workplace</div>
+                    <div class="tab code-tab" data-code-tab="explainer">Code Explainer</div>
+                    <div class="tab code-tab" data-code-tab="expert">Chat with Expert</div>
+                 </div>
+
+                 <div id="write-code-tab" class="code-tab-content flex flex-col flex-grow">
+                    <div class="code-preview-container">
+                        <div id="code-history" class="code-history p-4"></div>
+                        <div class="code-live-preview">
+                            <div class="code-preview-header"><span>Live Preview</span></div>
+                            <iframe id="code-preview-iframe"></iframe>
+                        </div>
+                    </div>
+                    <div class="chat-input-container"><input type="text" id="code-input" class="chat-input" placeholder="Describe the code you need (e.g., a blue button with rounded corners)..."></div>
+                 </div>
+
+                 <div id="workplace-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
+                    <div class="feature-panel flex-grow flex flex-col">
+                        <h3>AI Workplace</h3>
+                        <textarea id="workplace-editor" class="flex-grow font-mono" placeholder="Write your HTML, CSS, and JavaScript here..."></textarea>
+                        <button id="workplace-help-btn">Ask AI for Help</button>
+                        <div id="workplace-result" class="result-box hidden"></div>
+                    </div>
+                 </div>
+
+                 <div id="explainer-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
+                    <div class="feature-panel flex-grow flex flex-col">
+                        <h3>AI Code Explainer</h3>
+                        <textarea id="explainer-input" class="flex-grow font-mono" placeholder="Paste your code here..."></textarea>
+                        <button id="explain-code-btn">Explain Code</button>
+                        <div id="explainer-output" class="result-box"></div>
+                    </div>
+                 </div>
+
+                 <div id="expert-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
+                    <div class="feature-panel flex-grow flex flex-col">
+                        <h3>Chat with Code Expert</h3>
+                        <div id="expert-chat-history" class="result-box h-64 overflow-y-auto"></div>
+                        <div class="flex gap-2 mt-4">
+                            <input type="text" id="expert-chat-input" class="flex-grow" placeholder="Ask a coding question...">
+                            <button id="expert-chat-send-btn" class="w-auto">Send</button>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+            <!-- Chess Game Feature -->
+            <div id="chess-feature" class="feature-content hidden flex flex-col items-center justify-center">
+                <h2 class="text-3xl font-bold mb-6">Play Chess</h2>
+                <div class="flex items-center mb-4">
+                    <label for="chess-difficulty" class="mr-4">AI Level:</label>
+                    <select id="chess-difficulty"><option value="1">Easy</option><option value="2">Medium</option><option value="3">Hard</option></select>
+                </div>
+                <div id="chess-board" class="chess-board"></div>
+                <div id="chess-status" class="mt-4 text-lg">Select difficulty to start</div>
+                <button id="reset-chess-btn" class="mt-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">New Game</button>
+            </div>
+            <!-- Educational Feature -->
+            <div id="educational-feature" class="feature-content hidden">
+                <h2 class="text-3xl font-bold mb-6">Educational Tools</h2>
+                <div class="space-y-6">
+                    <div class="feature-panel">
+                        <h3>Educational Chat</h3>
+                        <div id="educational-chat-history" class="result-box h-64 overflow-y-auto"></div>
+                        <div class="flex gap-2 mt-4">
+                            <input type="text" id="educational-chat-input" class="flex-grow" placeholder="Ask a question...">
+                            <button id="educational-chat-send-btn" class="w-auto">Send</button>
+                        </div>
+                    </div>
+                    <div class="feature-panel">
+                        <h3>School Projects</h3>
+                        <textarea id="project-prompt" placeholder="e.g., a project about the solar system"></textarea>
+                        <button id="generate-project-btn">Get Project Ideas</button>
+                        <div id="project-result" class="result-box"></div>
+                    </div>
+                    <div class="feature-panel">
+                        <h3>Math Problem Solver</h3>
+                        <textarea id="math-prompt" placeholder="e.g., 2x + 5 = 15, what is x?"></textarea>
+                        <button id="solve-math-btn">Solve Problem</button>
+                        <div id="math-result" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Research Feature -->
+            <div id="research-feature" class="feature-content hidden">
+                <h2 class="text-3xl font-bold mb-6">Research Assistant</h2>
+                <div class="feature-panel">
+                    <h3>Search & Summarize</h3>
+                    <textarea id="research-prompt" placeholder="Enter a topic to research..."></textarea>
+                    <button id="research-btn">Start Research</button>
+                    <div id="research-result" class="result-box"></div>
+                </div>
+            </div>
+            <!-- Check Links Feature -->
+            <div id="links-feature" class="feature-content hidden">
+                <h2 class="text-3xl font-bold mb-6">Link Security Checker</h2>
+                <div class="feature-panel">
+                    <h3>Check a URL</h3>
+                    <input type="text" id="link-prompt" placeholder="Enter a URL to check...">
+                    <button id="check-link-btn">Check Link</button>
+                    <div id="link-result" class="result-box"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- API Keys ---
+        const GEMINI_API_KEY = "AIzaSyDwlrMesUe4s4LjJJ4HiPqHOzOhkuCkdew";
+        const DEEPSEEK_API_KEY = "sk-dc8b5aec2b1f410ca98d740b407290a1";
+        const GROK_API_KEY = "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";
+        const ELEVENLABS_API_KEY = "sk_1d42cb84bd2c91e33d337f792f75513f994c980fd0751454";
+        const ELEVENLABS_AGENT_ID = "agent_4301k0vq9xmpfffb11tqphxw7bmp";
+
+        // --- Global State & UI Elements ---
+        let voiceModeState = 'idle', mediaRecorder, audioChunks = [], conversationAudioQueue = [], isPlaying = false;
+        const voiceModeBtn = document.getElementById('voice-mode-btn'), voiceModeOverlay = document.getElementById('voice-mode-overlay'), exitVoiceModeBtn = document.getElementById('exit-voice-mode-btn'), voiceMicCircle = document.getElementById('voice-mic-circle'), voiceModeStatusText = document.getElementById('voice-mode-status-text');
+        const menuItems = document.querySelectorAll('.menu-item'), featureContents = document.querySelectorAll('.feature-content');
+
+        // --- Feature Switching ---
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const feature = item.getAttribute('data-feature');
+                if (!feature) return;
+                menuItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                featureContents.forEach(content => content.classList.add('hidden'));
+                const contentToShow = document.getElementById(`${feature}-feature`);
+                if (contentToShow) contentToShow.classList.remove('hidden');
+            });
+        });
+
+        // --- Tab Switching (Generations & Code) ---
+        function setupTabSwitching(tabSelector, contentSelector) {
+            const tabs = document.querySelectorAll(tabSelector);
+            const tabContents = document.querySelectorAll(contentSelector);
+            const baseId = contentSelector.split('-')[0].substring(1);
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const tabName = tab.getAttribute(`data-${baseId}-tab`);
+                    tabContents.forEach(content => {
+                        if (content.id === `${tabName}-${baseId}-tab`) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+        }
+        setupTabSwitching('.generation-tab', '.gen-tab-content');
+        setupTabSwitching('.code-tab', '.code-tab-content');
+
+        // --- Voice Mode ---
+        voiceModeBtn.addEventListener('click', () => { if (!ELEVENLABS_API_KEY) { alert("Please add your ElevenLabs API key to use the voice feature."); return; } voiceModeOverlay.style.display = 'flex'; setVoiceModeUI('idle'); });
+        exitVoiceModeBtn.addEventListener('click', () => { voiceModeOverlay.style.display = 'none'; if (voiceModeState === 'listening') mediaRecorder.stop(); });
+        voiceMicCircle.addEventListener('click', () => { if (voiceModeState === 'idle') startRecording(); else if (voiceModeState === 'listening') stopRecording(); });
+        function setVoiceModeUI(state, text) { voiceModeState = state; switch (state) { case 'idle': voiceMicCircle.classList.remove('listening'); voiceModeStatusText.textContent = text || 'Tap the circle to speak'; break; case 'listening': voiceMicCircle.classList.add('listening'); voiceModeStatusText.textContent = text || 'Listening... Tap again to stop'; break; case 'processing': voiceMicCircle.classList.remove('listening'); voiceModeStatusText.textContent = text || 'Thinking...'; break; } }
+        async function startRecording() { try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream); audioChunks = []; mediaRecorder.start(); setVoiceModeUI('listening'); mediaRecorder.addEventListener("dataavailable", event => { audioChunks.push(event.data); }); mediaRecorder.addEventListener("stop", async () => { stream.getTracks().forEach(track => track.stop()); const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); sendAudioToAgent(audioBlob); }); } catch (error) { console.error("Error accessing microphone:", error); let errorMessage = 'Error: Could not access microphone.'; if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') { errorMessage = 'Microphone access denied. Please allow microphone permission in your browser settings and try again.'; } setVoiceModeUI('idle', errorMessage); } }
+        function stopRecording() { if (mediaRecorder && voiceModeState === 'listening') { mediaRecorder.stop(); setVoiceModeUI('processing'); } }
+        async function sendAudioToAgent(audioBlob) { const apiUrl = `https://api.elevenlabs.io/v1/agent/${ELEVENLABS_AGENT_ID}/interact-streaming`; const formData = new FormData(); formData.append('audio', audioBlob, 'user_audio.webm'); formData.append('text', ''); try { const response = await fetch(apiUrl, { method: 'POST', headers: { 'xi-api-key': ELEVENLABS_API_KEY }, body: formData }); if (!response.ok) throw new Error(`API Error: ${await response.text()}`); const audioBlobResponse = await response.blob(); conversationAudioQueue.push(audioBlobResponse); playNextInQueue(); appendMessage("[Listened to your voice message]", 'user'); appendMessage("[Responded with voice]", 'ai'); } catch (error) { console.error("Error interacting with ElevenLabs Agent:", error); setVoiceModeUI('idle', 'Error connecting to agent.'); } }
+        function playNextInQueue() { if (isPlaying || conversationAudioQueue.length === 0) { return; } isPlaying = true; const audioBlob = conversationAudioQueue.shift(); const audioUrl = URL.createObjectURL(audioBlob); const audio = new Audio(audioUrl); audio.play(); audio.onended = () => { isPlaying = false; setVoiceModeUI('idle'); playNextInQueue(); }; }
+
+        // --- Text Generation APIs with Fallback ---
+        async function callGemini(prompt, model = 'gemini-1.5-flash-latest') {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                if (!response.ok) { const errorData = await response.json(); console.error("Gemini API Error:", errorData); throw new Error(errorData.error.message); }
+                const data = await response.json();
+                if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0].text) { return data.candidates[0].content.parts[0].text; }
+                throw new Error("Invalid response structure from Gemini.");
+            } catch (error) { console.error("Gemini Fetch Error:", error); throw error; }
+        }
+
+        async function callDeepSeek(prompt) {
+            const apiUrl = `https://api.deepseek.com/chat/completions`;
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` },
+                    body: JSON.stringify({ model: "deepseek-chat", messages: [{ "role": "user", "content": prompt }] })
+                });
+                if (!response.ok) { const errorData = await response.json(); console.error("DeepSeek API Error:", errorData); throw new Error(errorData.error.message); }
+                const data = await response.json();
+                if (data.choices && data.choices[0]) { return data.choices[0].message.content; }
+                throw new Error("Invalid response structure from DeepSeek.");
+            } catch (error) { console.error("DeepSeek Fetch Error:", error); throw error; }
+        }
+
+        async function callGrok(prompt) {
+            const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROK_API_KEY}` },
+                    body: JSON.stringify({ model: "gemma-7b-it", messages: [{ "role": "user", "content": prompt }] })
+                });
+                if (!response.ok) { const errorData = await response.json(); console.error("Grok API Error:", errorData); throw new Error(errorData.error.message); }
+                const data = await response.json();
+                if (data.choices && data.choices[0]) { return data.choices[0].message.content; }
+                throw new Error("Invalid response structure from Grok.");
+            } catch (error) { console.error("Grok Fetch Error:", error); throw error; }
+        }
+        
+        async function callBuiltInFreeModel(prompt) {
+            const apiKey = ""; // No key needed for this environment's free model
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error.message); }
+                const data = await response.json();
+                if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0].text) { return data.candidates[0].content.parts[0].text; }
+                throw new Error("Invalid response from built-in model.");
+            } catch (error) { console.error("Built-in model error:", error); throw error; }
+        }
+
+        async function generateTextResponse(prompt) {
+            try {
+                console.log("Attempting to use built-in free model...");
+                return await callBuiltInFreeModel(prompt);
+            } catch (error) {
+                console.warn("Built-in model failed, falling back to Gemini API...");
+                try {
+                    return await callGemini(prompt);
+                } catch (geminiError) {
+                    console.warn("Gemini failed, falling back to DeepSeek API...");
+                    try {
+                        return await callDeepSeek(prompt);
+                    } catch (deepseekError) {
+                        console.warn("DeepSeek also failed, falling back to Grok API...");
+                        try {
+                            return await callGrok(prompt);
+                        } catch (grokError) {
+                            console.error("All text models failed:", grokError.message);
+                            return "All AI models are currently unavailable. Please check your API keys and account status.";
+                        }
+                    }
+                }
+            }
+        }
+        
+        // --- Image Generation ---
+        const imagePrompt = document.getElementById('image-prompt'), generateImageBtn = document.getElementById('generate-image-btn'), imageGallery = document.getElementById('image-gallery'), imageLoading = document.getElementById('image-loading');
+        generateImageBtn.addEventListener('click', async () => {
+            const prompt = imagePrompt.value.trim(); if (!prompt) return;
+            imageGallery.innerHTML = ''; imageLoading.classList.remove('hidden');
+            const result = await callImagenSVG(prompt);
+            imageLoading.classList.add('hidden');
+            if (result && result.url) {
+                const galleryItem = document.createElement('div'); galleryItem.className = 'gallery-item';
+                const img = document.createElement('img'); img.src = result.url;
+                const label = document.createElement('div'); label.className = 'model-label'; label.textContent = result.model;
+                galleryItem.append(img, label); imageGallery.appendChild(galleryItem);
+            } else {
+                imageGallery.innerHTML = '<p class="text-red-400 col-span-full text-center">Failed to generate image. Please try a different prompt.</p>';
+            }
+        });
+        async function callImagenSVG(prompt) { const svgPrompt = `Create a simple, self-contained SVG vector graphic representing: "${prompt}". The SVG must have a viewBox="0 0 100 100" and use basic shapes and colors. Output ONLY the raw <svg> tag and its content. Do not include XML declarations or markdown backticks.`; try { const rawResponse = await generateTextResponse(svgPrompt); if (typeof rawResponse !== 'string' || rawResponse.startsWith("Error:")) { console.error("SVG Generation Error:", rawResponse); return null; } const svgMatch = rawResponse.match(/<svg[\s\S]*?<\/svg>/); if (!svgMatch) { console.error("SVG Generation Error: No SVG tag found.", rawResponse); return null; } return { url: `data:image/svg+xml;base64,${btoa(svgMatch[0])}`, model: '3rabiano (SVG)' }; } catch (error) { console.error("SVG Generation Fetch Error:", error); return null; } }
+        
+        // --- Voice Generation (TTS) ---
+        const voiceTextPrompt = document.getElementById('voice-text-prompt'), generateVoiceBtn = document.getElementById('generate-voice-btn'), voiceOutput = document.getElementById('voice-output');
+        generateVoiceBtn.addEventListener('click', async () => {
+            const text = voiceTextPrompt.value.trim(); if (!text) return;
+            voiceOutput.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            const audioBlob = await callElevenlabsTTS(text);
+            if (audioBlob) {
+                const audioUrl = URL.createObjectURL(audioBlob);
+                voiceOutput.innerHTML = `<audio controls autoplay src="${audioUrl}"></audio>`;
+            } else {
+                voiceOutput.textContent = 'Failed to generate audio.';
+            }
+        });
+        async function callElevenlabsTTS(text) { if (!ELEVENLABS_API_KEY) return null; const voiceId = '21m00Tcm4TlvDq8ikWAM'; const apiUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`; try { const response = await fetch(apiUrl, { method: 'POST', headers: { 'Accept': 'audio/mpeg', 'Content-Type': 'application/json', 'xi-api-key': ELEVENLABS_API_KEY }, body: JSON.stringify({ text: text, model_id: 'eleven_monolingual_v1' }) }); if (!response.ok) { console.error("ElevenLabs TTS Error:", await response.json()); return null; } return await response.blob(); } catch (error) { console.error("ElevenLabs TTS Fetch Error:", error); return null; } }
+
+        // --- QR Code Generation ---
+        const qrcodePrompt = document.getElementById('qrcode-prompt'), generateQrcodeBtn = document.getElementById('generate-qrcode-btn'), qrcodeOutput = document.getElementById('qrcode-output');
+        generateQrcodeBtn.addEventListener('click', () => {
+            const text = qrcodePrompt.value.trim(); if (!text) return;
+            qrcodeOutput.innerHTML = '';
+            new QRCode(qrcodeOutput, { text: text, width: 256, height: 256 });
+        });
+
+        // --- Text Chat ---
+        const chatInput = document.getElementById('chat-input'), sendBtn = document.getElementById('send-btn'), chatHistory = document.getElementById('chat-history');
+        async function handleChat() { const prompt = chatInput.value.trim(); if (!prompt) return; appendMessage(prompt, 'user'); chatInput.value = ''; const typingIndicator = appendMessage('<div class="typing-indicator"><span></span><span></span><span></span></div>', 'ai'); const aiResponse = await generateTextResponse(prompt); if (typeof aiResponse === 'string') { typingIndicator.querySelector('p').innerHTML = aiResponse.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); } else { typingIndicator.querySelector('p').textContent = 'An unexpected error occurred.'; } }
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleChat(); });
+        sendBtn.addEventListener('click', handleChat);
+        function appendMessage(text, sender) { const messageDiv = document.createElement('div'); messageDiv.className = `chat-message ${sender === 'user' ? 'user-message' : 'ai-message'}`; const avatar = document.createElement('div'); avatar.className = `avatar ${sender === 'user' ? 'user-avatar' : 'ai-avatar'}`; avatar.textContent = sender === 'user' ? 'You' : 'A'; const messageText = document.createElement('p'); messageText.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); messageDiv.append(avatar, messageText); chatHistory.appendChild(messageDiv); chatHistory.scrollTop = chatHistory.scrollHeight; return messageDiv; }
+
+        // --- Code Generation ---
+        const codeInput = document.getElementById('code-input'), codeHistory = document.getElementById('code-history'), codePreviewIframe = document.getElementById('code-preview-iframe');
+        codeInput.addEventListener('keypress', async (e) => { if (e.key === 'Enter') { const prompt = codeInput.value.trim(); if (!prompt) return; appendCodeMessage(`> ${prompt}`, 'user'); codeInput.value = ''; const codePrompt = `Generate a single, complete HTML file with CSS and JS for the following prompt. The code should be self-contained and ready to run. Do not include any explanation, comments, or markdown backticks. Just the raw code. Prompt: ${prompt}`; const typingIndicator = appendCodeMessage('<div class="typing-indicator"><span></span><span></span><span></span></div>', 'ai'); const codeResponse = await generateTextResponse(codePrompt); typingIndicator.remove(); appendCodeMessage(codeResponse, 'ai'); } });
+        function appendCodeMessage(code, sender) { if (sender === 'user') { const pre = document.createElement('pre'); pre.className = 'p-4 rounded-lg mb-4 whitespace-pre-wrap break-words bg-[#282a2b] text-gray-300'; pre.textContent = code; codeHistory.appendChild(pre); return pre; } else { if(code.includes('typing-indicator')) { const indicator = document.createElement('div'); indicator.innerHTML = code; codeHistory.appendChild(indicator); return indicator; } const cleanedCode = (typeof code === 'string') ? code.replace(/```[\w\s]*\n/g, '').replace(/```/g, '').trim() : "/* Error: Could not generate code. */"; const previewContainer = document.createElement('div'); previewContainer.className = 'code-preview'; const header = document.createElement('div'); header.className = 'code-preview-header'; const copyBtn = document.createElement('button'); copyBtn.className = 'copy-code-btn'; copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy'; copyBtn.onclick = () => { navigator.clipboard.writeText(cleanedCode).then(() => { copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!'; setTimeout(() => { copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000); }); }; header.appendChild(copyBtn); const pre = document.createElement('pre'); pre.className = 'p-4 whitespace-pre-wrap break-words'; const codeElement = document.createElement('code'); codeElement.textContent = cleanedCode; pre.appendChild(codeElement); previewContainer.append(header, pre); codeHistory.appendChild(previewContainer); codePreviewIframe.srcdoc = cleanedCode; } codeHistory.scrollTop = codeHistory.scrollHeight; }
+        
+        // --- AI Workplace ---
+        const workplaceEditor = document.getElementById('workplace-editor');
+        const workplaceIframe = document.getElementById('workplace-iframe');
+        const workplaceHelpBtn = document.getElementById('workplace-help-btn');
+        const workplaceResult = document.getElementById('workplace-result');
+        workplaceEditor.addEventListener('input', () => {
+            workplaceIframe.srcdoc = workplaceEditor.value;
+        });
+        workplaceHelpBtn.addEventListener('click', async () => {
+            const code = workplaceEditor.value;
+            if (!code) return;
+            workplaceResult.classList.remove('hidden');
+            workplaceResult.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            const helpPrompt = `I'm working on this code. Can you help me improve it or suggest what to do next?\n\n${code}`;
+            const aiResponse = await generateTextResponse(helpPrompt);
+            workplaceResult.textContent = aiResponse;
+        });
+
+        // --- Code Explainer ---
+        const explainerInput = document.getElementById('explainer-input');
+        const explainCodeBtn = document.getElementById('explain-code-btn');
+        const explainerOutput = document.getElementById('explainer-output');
+        explainCodeBtn.addEventListener('click', async () => {
+            const code = explainerInput.value;
+            if (!code) return;
+            explainerOutput.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            const explainPrompt = `Explain this code:\n\n${code}`;
+            explainerOutput.textContent = await generateTextResponse(explainPrompt);
+        });
+
+        // --- Code Expert Chat ---
+        const expertChatHistory = document.getElementById('expert-chat-history');
+        const expertChatInput = document.getElementById('expert-chat-input');
+        const expertChatSendBtn = document.getElementById('expert-chat-send-btn');
+        async function handleExpertChat() {
+            const prompt = expertChatInput.value.trim();
+            if (!prompt) return;
+            appendExpertMessage(prompt, 'user');
+            expertChatInput.value = '';
+            const typingIndicator = appendExpertMessage('<div class="typing-indicator"><span></span><span></span><span></span></div>', 'ai');
+            const expertPrompt = `You are a world-class software engineer and code expert. Answer the following question: ${prompt}`;
+            const aiResponse = await generateTextResponse(expertPrompt);
+            typingIndicator.innerHTML = aiResponse;
+        }
+        expertChatSendBtn.addEventListener('click', handleExpertChat);
+        expertChatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleExpertChat(); });
+        function appendExpertMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `text-sm p-2 rounded-lg mb-2 ${sender === 'user' ? 'bg-gray-700 text-right' : 'bg-gray-800'}`;
+            messageDiv.innerHTML = text;
+            expertChatHistory.appendChild(messageDiv);
+            expertChatHistory.scrollTop = expertChatHistory.scrollHeight;
+            return messageDiv;
+        }
+
+        // --- Educational Tools ---
+        const educationalChatHistory = document.getElementById('educational-chat-history');
+        const educationalChatInput = document.getElementById('educational-chat-input');
+        const educationalChatSendBtn = document.getElementById('educational-chat-send-btn');
+        
+        async function handleEducationalChat() {
+            const prompt = educationalChatInput.value.trim();
+            if (!prompt) return;
+            appendEducationalMessage(prompt, 'user');
+            educationalChatInput.value = '';
+            const typingIndicator = appendEducationalMessage('<div class="typing-indicator"><span></span><span></span><span></span></div>', 'ai');
+            const educationalPrompt = `You are an educational tutor. Answer the following question clearly and concisely for a student: ${prompt}`;
+            const aiResponse = await generateTextResponse(educationalPrompt);
+            typingIndicator.innerHTML = aiResponse;
+        }
+
+        educationalChatSendBtn.addEventListener('click', handleEducationalChat);
+        educationalChatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleEducationalChat(); });
+
+        function appendEducationalMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `text-sm p-2 rounded-lg mb-2 ${sender === 'user' ? 'bg-gray-700 text-right' : 'bg-gray-800'}`;
+            messageDiv.innerHTML = text;
+            educationalChatHistory.appendChild(messageDiv);
+            educationalChatHistory.scrollTop = educationalChatHistory.scrollHeight;
+            return messageDiv;
+        }
+
+        document.getElementById('generate-project-btn').addEventListener('click', async () => { const prompt = document.getElementById('project-prompt').value; const resultBox = document.getElementById('project-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Provide school project ideas for: ${prompt}`); });
+        document.getElementById('solve-math-btn').addEventListener('click', async () => { const prompt = document.getElementById('math-prompt').value; const resultBox = document.getElementById('math-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Solve this math problem: ${prompt}`); });
+
+        // --- Research Tool ---
+        document.getElementById('research-btn').addEventListener('click', async () => { const prompt = document.getElementById('research-prompt').value; const resultBox = document.getElementById('research-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Search Google for "${prompt}" and provide a detailed summary of the top results.`); });
+
+        // --- Link Checker ---
+        document.getElementById('check-link-btn').addEventListener('click', async () => { const prompt = document.getElementById('link-prompt').value; const resultBox = document.getElementById('link-result'); resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>'; resultBox.textContent = await generateTextResponse(`Analyze the URL "${prompt}" for potential security threats like phishing, malware, or scams. Provide a safety rating (e.g., Safe, Suspicious, Dangerous) and explain your reasoning.`); });
+
+        // --- Chess Game Logic ---
+        const boardElement = document.getElementById('chess-board'), statusElement = document.getElementById('chess-status'), resetChessBtn = document.getElementById('reset-chess-btn'), difficultySelect = document.getElementById('chess-difficulty');
+        const pieceSymbols = { 'r':'♜', 'n':'♞', 'b':'♝', 'q':'♛', 'k':'♚', 'p':'♟', 'R':'♖', 'N':'♘', 'B':'♗', 'Q':'♕', 'K':'♔', 'P':'♙' };
+        let chessBoardState, chessTurn, selectedPiece, isPlayerTurn;
+        function initChess() { chessBoardState = [ ['r','n','b','q','k','b','n','r'], ['p','p','p','p','p','p','p','p'], ['','','','','','','',''], ['','','','','','','',''], ['','','','','','','',''], ['','','','','','','',''], ['P','P','P','P','P','P','P','P'], ['R','N','B','Q','K','B','N','R'] ]; chessTurn = 'white'; selectedPiece = null; isPlayerTurn = true; statusElement.textContent = "Your Turn (White)"; renderBoard(); }
+        resetChessBtn.addEventListener('click', initChess);
+        difficultySelect.addEventListener('change', initChess);
+        function renderBoard() { boardElement.innerHTML = ''; for (let i = 0; i < 8; i++) { for (let j = 0; j < 8; j++) { const square = document.createElement('div'); square.className = `chess-square ${(i + j) % 2 === 0 ? 'light' : 'dark'}`; square.dataset.row = i; square.dataset.col = j; const piece = chessBoardState[i][j]; if (piece) { const pieceElement = document.createElement('span'); pieceElement.className = 'chess-piece'; pieceElement.textContent = pieceSymbols[piece]; pieceElement.style.color = piece === piece.toUpperCase() ? '#fff' : '#000'; square.appendChild(pieceElement); } boardElement.appendChild(square); } } addSquareListeners(); }
+        function addSquareListeners() { document.querySelectorAll('.chess-square').forEach(square => square.addEventListener('click', handleSquareClick)); }
+        async function handleSquareClick(e) { if (!isPlayerTurn) return; const square = e.currentTarget; const row = parseInt(square.dataset.row); const col = parseInt(square.dataset.col); if (selectedPiece) { const fromRow = selectedPiece.row; const fromCol = selectedPiece.col; const legalMoves = getAllPossibleMoves(chessBoardState, 'white').filter(m => m.from[0] === fromRow && m.from[1] === fromCol); const isLegal = legalMoves.some(m => m.to[0] === row && m.to[1] === col); if (isLegal) { applyMove(chessBoardState, { from: [fromRow, fromCol], to: [row, col] }); const isCheck = isKingInCheck(chessBoardState, 'black'); if (isCheck && isCheckmate(chessBoardState, 'black')) { statusElement.textContent = "Checkmate! You win!"; isPlayerTurn = false; } else if (isStalemate(chessBoardState, 'black')) { statusElement.textContent = "Stalemate! It's a draw."; isPlayerTurn = false; } else { chessTurn = 'black'; isPlayerTurn = false; statusElement.textContent = "AI's Turn (Black)"; setTimeout(makeComputerMove, 100); } } selectedPiece = null; renderBoard(); } else { const piece = chessBoardState[row][col]; if (piece && piece === piece.toUpperCase()) { selectedPiece = { row, col, piece }; square.style.backgroundColor = 'rgba(0, 255, 0, 0.5)'; } } }
+        function makeComputerMove() { statusElement.textContent = "AI is thinking..."; setTimeout(() => { const depth = parseInt(difficultySelect.value); const bestMove = getBestMove(chessBoardState, depth, 'black'); if (bestMove) { applyMove(chessBoardState, bestMove); const isCheck = isKingInCheck(chessBoardState, 'white'); if (isCheck && isCheckmate(chessBoardState, 'white')) { statusElement.textContent = "Checkmate! You lose."; isPlayerTurn = false; } else if (isStalemate(chessBoardState, 'white')) { statusElement.textContent = "Stalemate! It's a draw."; isPlayerTurn = false; } else { chessTurn = 'white'; isPlayerTurn = true; statusElement.textContent = isCheck ? "Check! Your Turn (White)" : "Your Turn (White)"; } } else { statusElement.textContent = isKingInCheck(chessBoardState, 'black') ? "Checkmate! You win!" : "Stalemate! It's a draw."; isPlayerTurn = false; } renderBoard(); }, 100); }
+        const pieceValues = { 'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 900 };
+        function getBestMove(board, depth, color) { let bestMove = null; let bestValue = color === 'white' ? -Infinity : Infinity; const moves = getAllPossibleMoves(board, color); moves.sort(() => Math.random() - 0.5); for (const move of moves) { const newBoard = createBoardCopy(board); applyMove(newBoard, move); const boardValue = minimax(newBoard, depth - 1, -Infinity, Infinity, color !== 'white'); if (color === 'white') { if (boardValue > bestValue) { bestValue = boardValue; bestMove = move; } } else { if (boardValue < bestValue) { bestValue = boardValue; bestMove = move; } } } return bestMove; }
+        function minimax(board, depth, alpha, beta, isMaximizingPlayer) { if (depth === 0) return evaluateBoard(board); const color = isMaximizingPlayer ? 'white' : 'black'; const moves = getAllPossibleMoves(board, color); if (moves.length === 0) { if (isKingInCheck(board, color)) return isMaximizingPlayer ? -Infinity : Infinity; return 0; } if (isMaximizingPlayer) { let maxEval = -Infinity; for (const move of moves) { const newBoard = createBoardCopy(board); applyMove(newBoard, move); const eval = minimax(newBoard, depth - 1, alpha, beta, false); maxEval = Math.max(maxEval, eval); alpha = Math.max(alpha, eval); if (beta <= alpha) break; } return maxEval; } else { let minEval = Infinity; for (const move of moves) { const newBoard = createBoardCopy(board); applyMove(newBoard, move); const eval = minimax(newBoard, depth - 1, alpha, beta, true); minEval = Math.min(minEval, eval); beta = Math.min(beta, eval); if (beta <= alpha) break; } return minEval; } }
+        function evaluateBoard(board) { let totalEvaluation = 0; for (let i = 0; i < 8; i++) { for (let j = 0; j < 8; j++) { const piece = board[i][j]; if (piece) { const value = pieceValues[piece.toLowerCase()]; totalEvaluation += piece === piece.toUpperCase() ? value : -value; } } } return totalEvaluation; }
+        function getAllPossibleMoves(board, color) { const moves = []; for (let r = 0; r < 8; r++) { for (let c = 0; c < 8; c++) { const piece = board[r][c]; if (piece && (color === 'white' ? piece === piece.toUpperCase() : piece === piece.toLowerCase())) { const pieceMoves = getPieceMoves(board, piece, r, c); for (const move of pieceMoves) { const newBoard = createBoardCopy(board); applyMove(newBoard, { from: [r, c], to: move }); if (!isKingInCheck(newBoard, color)) { moves.push({ from: [r, c], to: move }); } } } } } return moves; }
+        function getPieceMoves(board, piece, r, c) { const type = piece.toLowerCase(); if (type === 'p') return getPawnMoves(board, piece, r, c); if (type === 'r') return getSlidingMoves(board, piece, r, c, [[-1, 0], [1, 0], [0, -1], [0, 1]]); if (type === 'b') return getSlidingMoves(board, piece, r, c, [[-1, -1], [-1, 1], [1, -1], [1, 1]]); if (type === 'q') return getSlidingMoves(board, piece, r, c, [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]]); if (type === 'k') return getKingMoves(board, piece, r, c); if (type === 'n') return getKnightMoves(board, piece, r, c); return []; }
+        function getPawnMoves(board, piece, r, c) { const moves = []; const color = piece === piece.toUpperCase() ? 'white' : 'black'; const dir = color === 'white' ? -1 : 1; const startRow = color === 'white' ? 6 : 1; if (r + dir >= 0 && r + dir < 8 && !board[r + dir][c]) moves.push([r + dir, c]); if (r === startRow && !board[r + dir][c] && !board[r + 2 * dir][c]) moves.push([r + 2 * dir, c]); [-1, 1].forEach(cd => { if (c + cd >= 0 && c + cd < 8) { const target = board[r + dir][c + cd]; if (target && (color === 'white' ? target === target.toLowerCase() : target === target.toUpperCase())) { moves.push([r + dir, c + cd]); } } }); return moves; }
+        function getSlidingMoves(board, piece, r, c, directions) { const moves = []; const color = piece === piece.toUpperCase() ? 'white' : 'black'; for (const [dr, dc] of directions) { for (let i = 1; i < 8; i++) { const newR = r + i * dr, newC = c + i * dc; if (newR < 0 || newR >= 8 || newC < 0 || newC >= 8) break; const target = board[newR][newC]; if (target) { if ((color === 'white' ? target === target.toLowerCase() : target === target.toUpperCase())) { moves.push([newR, newC]); } break; } moves.push([newR, newC]); } } return moves; }
+        function getKingMoves(board, piece, r, c) { const moves = []; const color = piece === piece.toUpperCase() ? 'white' : 'black'; for (let dr = -1; dr <= 1; dr++) { for (let dc = -1; dc <= 1; dc++) { if (dr === 0 && dc === 0) continue; const newR = r + dr, newC = c + dc; if (newR < 0 || newR >= 8 || newC < 0 || newC >= 8) continue; const target = board[newR][newC]; if (!target || (color === 'white' ? target === target.toLowerCase() : target === target.toUpperCase())) { moves.push([newR, newC]); } } } return moves; }
+        function getKnightMoves(board, piece, r, c) { const moves = []; const color = piece === piece.toUpperCase() ? 'white' : 'black'; const knightMoves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]; for (const [dr, dc] of knightMoves) { const newR = r + dr, newC = c + dc; if (newR < 0 || newR >= 8 || newC < 0 || newC >= 8) continue; const target = board[newR][newC]; if (!target || (color === 'white' ? target === target.toLowerCase() : target === target.toUpperCase())) { moves.push([newR, newC]); } } return moves; }
+        function isKingInCheck(board, color) { const kingPos = findKing(board, color); if (!kingPos) return true; const opponentColor = color === 'white' ? 'black' : 'white'; for (let r = 0; r < 8; r++) { for (let c = 0; c < 8; c++) { const piece = board[r][c]; if (piece && (opponentColor === 'white' ? piece === piece.toUpperCase() : piece === piece.toLowerCase())) { const moves = getPieceMoves(board, piece, r, c); if (moves.some(m => m[0] === kingPos.r && m[1] === kingPos.c)) return true; } } } return false; }
+        function findKing(board, color) { const kingChar = color === 'white' ? 'K' : 'k'; for (let r = 0; r < 8; r++) { for (let c = 0; c < 8; c++) { if (board[r][c] === kingChar) return { r, c }; } } return null; }
+        function isCheckmate(board, color) { return isKingInCheck(board, color) && getAllPossibleMoves(board, color).length === 0; }
+        function isStalemate(board, color) { return !isKingInCheck(board, color) && getAllPossibleMoves(board, color).length === 0; }
+        function applyMove(board, move) { let piece = board[move.from[0]][move.from[1]]; board[move.to[0]][move.to[1]] = piece; board[move.from[0]][move.from[1]] = ''; if (piece.toLowerCase() === 'p' && (move.to[0] === 0 || move.to[0] === 7)) { board[move.to[0]][move.to[1]] = piece === 'P' ? 'Q' : 'q'; } }
+        function createBoardCopy(board) { return board.map(row => row.slice()); }
+
+        // Initial render
+        initChess();
+    });
+    </script>
+
+</body>
+</html>
 

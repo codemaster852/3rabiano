@@ -23,7 +23,7 @@
         .chat-message { padding: 15px; border-radius: 12px; margin-bottom: 15px; max-width: 80%; display: flex; align-items: flex-start; }
         .user-message { background-color: #282a2b; align-self: flex-end; margin-left: auto; }
         .ai-message { background-color: #1e1f20; align-self: flex-start; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
         .user-avatar { background-color: #4a4a4a; }
         .ai-avatar { background: linear-gradient(135deg, #4285F4 0%, #34A853 100%); }
         .chess-board { width: 400px; height: 400px; display: grid; grid-template-columns: repeat(8, 1fr); border: 2px solid #333; }
@@ -99,6 +99,11 @@
         #workplace-editor { flex-grow: 1; border-radius: 8px; overflow: hidden; }
         #workplace-preview { width: 100%; flex-grow: 1; border: none; border-radius: 8px; background-color: white; }
         .workplace-header { background-color: #282a2b; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* TTS Button Styling */
+        .text-to-speech-btn { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; padding: 4px; border-radius: 4px; }
+        .text-to-speech-btn:hover { background-color: #374151; color: white; }
+        .text-to-speech-btn i { margin-right: 4px; }
     </style>
 </head>
 <body>
@@ -134,7 +139,7 @@
             <!-- Chat Feature -->
             <div id="chat-feature" class="feature-content">
                 <div id="chat-history" class="flex-grow mb-4">
-                    <div class="ai-message chat-message"><div class="avatar ai-avatar">A</div><p>Hello! I'm 3rabiano. How can I help you today?</p></div>
+                    <!-- Messages will be appended here -->
                 </div>
                 <div class="chat-input-container">
                     <div class="relative">
@@ -522,10 +527,11 @@
         const ELEVENLABS_AGENT_ID = "agent_4301k0vq9xmpfffb11tqphxw7bmp";
 
         // --- Global State & UI Elements ---
-        let voiceModeState = 'idle', mediaRecorder, audioChunks = [], conversationAudioQueue = [], isPlaying = false;
+        let voiceModeState = 'idle';
         const voiceModeBtn = document.getElementById('voice-mode-btn'), voiceModeOverlay = document.getElementById('voice-mode-overlay'), exitVoiceModeBtn = document.getElementById('exit-voice-mode-btn'), voiceMicCircle = document.getElementById('voice-mic-circle'), voiceModeStatusText = document.getElementById('voice-mode-status-text');
         const menuItems = document.querySelectorAll('.menu-item'), featureContents = document.querySelectorAll('.feature-content');
         let workplaceEditorInstance = null;
+        let currentlyPlayingAudio = null;
 
         // --- Feature Switching ---
         menuItems.forEach(item => {
@@ -691,15 +697,131 @@
         });
 
 
-        // --- Voice Mode ---
-        voiceModeBtn.addEventListener('click', () => { if (!ELEVENLABS_API_KEY) { alert("Please add your ElevenLabs API key to use the voice feature."); return; } voiceModeOverlay.style.display = 'flex'; setVoiceModeUI('idle'); });
-        exitVoiceModeBtn.addEventListener('click', () => { voiceModeOverlay.style.display = 'none'; if (voiceModeState === 'listening') mediaRecorder.stop(); });
-        voiceMicCircle.addEventListener('click', () => { if (voiceModeState === 'idle') startRecording(); else if (voiceModeState === 'listening') stopRecording(); });
-        function setVoiceModeUI(state, text) { voiceModeState = state; switch (state) { case 'idle': voiceMicCircle.classList.remove('listening'); voiceModeStatusText.textContent = text || 'Tap the circle to speak'; break; case 'listening': voiceMicCircle.classList.add('listening'); voiceModeStatusText.textContent = text || 'Listening... Tap again to stop'; break; case 'processing': voiceMicCircle.classList.remove('listening'); voiceModeStatusText.textContent = text || 'Thinking...'; break; } }
-        async function startRecording() { try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream); audioChunks = []; mediaRecorder.start(); setVoiceModeUI('listening'); mediaRecorder.addEventListener("dataavailable", event => { audioChunks.push(event.data); }); mediaRecorder.addEventListener("stop", async () => { stream.getTracks().forEach(track => track.stop()); const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); sendAudioToAgent(audioBlob); }); } catch (error) { console.error("Error accessing microphone:", error); let errorMessage = 'Error: Could not access microphone.'; if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') { errorMessage = 'Microphone access denied. Please allow microphone permission in your browser settings and try again.'; } setVoiceModeUI('idle', errorMessage); } }
-        function stopRecording() { if (mediaRecorder && voiceModeState === 'listening') { mediaRecorder.stop(); setVoiceModeUI('processing'); } }
-        async function sendAudioToAgent(audioBlob) { const apiUrl = `https://api.elevenlabs.io/v1/agent/${ELEVENLABS_AGENT_ID}/interact-streaming`; const formData = new FormData(); formData.append('audio', audioBlob, 'user_audio.webm'); formData.append('text', ''); try { const response = await fetch(apiUrl, { method: 'POST', headers: { 'xi-api-key': ELEVENLABS_API_KEY }, body: formData }); if (!response.ok) throw new Error(`API Error: ${await response.text()}`); const audioBlobResponse = await response.blob(); conversationAudioQueue.push(audioBlobResponse); playNextInQueue(); appendMessage("[Listened to your voice message]", 'user'); appendMessage("[Responded with voice]", 'ai'); } catch (error) { console.error("Error interacting with ElevenLabs Agent:", error); setVoiceModeUI('idle', 'Error connecting to agent.'); } }
-        function playNextInQueue() { if (isPlaying || conversationAudioQueue.length === 0) { return; } isPlaying = true; const audioBlob = conversationAudioQueue.shift(); const audioUrl = URL.createObjectURL(audioBlob); const audio = new Audio(audioUrl); audio.play(); audio.onended = () => { isPlaying = false; setVoiceModeUI('idle'); playNextInQueue(); }; }
+        // --- Voice Mode (Speech-to-Text & Text-to-Speech) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('chat-input').value = transcript;
+                voiceModeOverlay.style.display = 'none';
+                setVoiceModeUI('idle');
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+                setVoiceModeUI('idle', `Error: ${event.error}`);
+            };
+            
+            recognition.onend = () => {
+                if (voiceModeState === 'listening') {
+                    setVoiceModeUI('idle');
+                }
+            };
+        } else {
+            voiceModeBtn.style.display = 'none';
+        }
+
+        voiceModeBtn.addEventListener('click', () => { 
+            if (!SpeechRecognition) return;
+            voiceModeOverlay.style.display = 'flex'; 
+            setVoiceModeUI('idle'); 
+        });
+        exitVoiceModeBtn.addEventListener('click', () => { 
+            voiceModeOverlay.style.display = 'none'; 
+            if (voiceModeState === 'listening') stopRecording(); 
+        });
+        voiceMicCircle.addEventListener('click', () => { 
+            if (voiceModeState === 'idle') startRecording(); 
+            else if (voiceModeState === 'listening') stopRecording(); 
+        });
+
+        function setVoiceModeUI(state, text) { 
+            voiceModeState = state; 
+            switch (state) { 
+                case 'idle': 
+                    voiceMicCircle.classList.remove('listening'); 
+                    voiceModeStatusText.textContent = text || 'Tap the circle to speak'; 
+                    break; 
+                case 'listening': 
+                    voiceMicCircle.classList.add('listening'); 
+                    voiceModeStatusText.textContent = text || 'Listening... Tap again to stop'; 
+                    break; 
+                case 'processing':
+                    voiceMicCircle.classList.remove('listening'); 
+                    voiceModeStatusText.textContent = text || 'Processing...'; 
+                    break; 
+            } 
+        }
+
+        function startRecording() {
+            if (recognition) {
+                recognition.start();
+                setVoiceModeUI('listening');
+            }
+        }
+
+        function stopRecording() {
+            if (recognition) {
+                recognition.stop();
+                setVoiceModeUI('processing');
+            }
+        }
+        
+        async function handleTTS(event, textElement) {
+            const button = event.currentTarget;
+            const textToSpeak = textElement.innerText;
+
+            // If an audio is currently playing, stop it.
+            if (currentlyPlayingAudio && !currentlyPlayingAudio.paused) {
+                currentlyPlayingAudio.pause();
+                currentlyPlayingAudio.currentTime = 0;
+                document.querySelectorAll('.text-to-speech-btn i').forEach(icon => icon.className = 'fas fa-play-circle mr-1');
+                
+                // If the clicked button was the one playing, we just stop.
+                if (button.querySelector('i').className.includes('fa-stop-circle')) {
+                     currentlyPlayingAudio = null;
+                     return;
+                }
+            }
+            
+            if (!textToSpeak) return;
+
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>';
+            
+            const audioBlob = await callElevenlabsTTS(textToSpeak);
+            if (audioBlob) {
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                currentlyPlayingAudio = audio;
+
+                audio.onplaying = () => {
+                    button.innerHTML = '<i class="fas fa-stop-circle mr-1"></i> Stop';
+                };
+                audio.onended = () => {
+                    button.innerHTML = '<i class="fas fa-play-circle mr-1"></i> Read aloud';
+                    currentlyPlayingAudio = null;
+                };
+                audio.onpause = () => {
+                     button.innerHTML = '<i class="fas fa-play-circle mr-1"></i> Read aloud';
+                };
+
+                audio.play().catch(e => {
+                    console.error("Audio playback failed:", e);
+                    button.innerHTML = '<i class="fas fa-exclamation-circle mr-1"></i> Error';
+                });
+            } else {
+                button.innerHTML = '<i class="fas fa-exclamation-circle mr-1"></i> Error';
+            }
+        }
+
 
         // --- Text Generation APIs with Fallback ---
         async function callGemini(prompt, model = 'gemini-1.5-flash-latest') {
@@ -907,10 +1029,57 @@
 
         // --- Text Chat ---
         const chatInput = document.getElementById('chat-input'), sendBtn = document.getElementById('send-btn'), chatHistory = document.getElementById('chat-history');
-        async function handleChat() { const prompt = chatInput.value.trim(); if (!prompt) return; appendMessage(prompt, 'user'); chatInput.value = ''; const typingIndicator = appendMessage('<div class="typing-indicator"><span></span><span></span><span></span></div>', 'ai'); const aiResponse = await generateTextResponse(prompt); if (typeof aiResponse === 'string') { typingIndicator.querySelector('p').innerHTML = aiResponse.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); } else { typingIndicator.querySelector('p').textContent = 'An unexpected error occurred.'; } }
+        async function handleChat() { 
+            const prompt = chatInput.value.trim(); 
+            if (!prompt) return; 
+            appendMessage(prompt, 'user'); 
+            chatInput.value = ''; 
+            const typingIndicator = appendMessage('<div class="typing-indicator"><span></span><span></span><span></span></div>', 'ai'); 
+            const aiResponse = await generateTextResponse(prompt); 
+            if (typeof aiResponse === 'string') { 
+                typingIndicator.querySelector('p').innerHTML = aiResponse.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
+                // Show the TTS button now that we have the final text
+                const ttsButton = typingIndicator.querySelector('.text-to-speech-btn');
+                if(ttsButton) ttsButton.style.display = 'flex';
+            } else { 
+                typingIndicator.querySelector('p').textContent = 'An unexpected error occurred.'; 
+            } 
+        }
         chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleChat(); });
         sendBtn.addEventListener('click', handleChat);
-        function appendMessage(text, sender) { const messageDiv = document.createElement('div'); messageDiv.className = `chat-message ${sender === 'user' ? 'user-message' : 'ai-message'}`; const avatar = document.createElement('div'); avatar.className = `avatar ${sender === 'user' ? 'user-avatar' : 'ai-avatar'}`; avatar.textContent = sender === 'user' ? 'You' : 'A'; const messageText = document.createElement('p'); messageText.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); messageDiv.append(avatar, messageText); chatHistory.appendChild(messageDiv); chatHistory.scrollTop = chatHistory.scrollHeight; return messageDiv; }
+        
+        function appendMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender === 'user' ? 'user-message' : 'ai-message'}`;
+            const avatar = document.createElement('div');
+            avatar.className = `avatar ${sender === 'user' ? 'user-avatar' : 'ai-avatar'}`;
+            avatar.textContent = sender === 'user' ? 'You' : 'A';
+            
+            const messageContentWrapper = document.createElement('div');
+            messageContentWrapper.className = 'flex-grow';
+
+            const messageText = document.createElement('p');
+            messageText.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            messageContentWrapper.appendChild(messageText);
+
+            if (sender === 'ai') {
+                const ttsButton = document.createElement('button');
+                ttsButton.className = 'text-to-speech-btn mt-2';
+                ttsButton.innerHTML = '<i class="fas fa-play-circle"></i> Read aloud';
+                ttsButton.onclick = (e) => handleTTS(e, messageText);
+                // Hide button for typing indicator
+                if (text.includes('typing-indicator')) {
+                    ttsButton.style.display = 'none';
+                }
+                messageContentWrapper.appendChild(ttsButton);
+            }
+            
+            messageDiv.append(avatar, messageContentWrapper);
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            return messageDiv;
+        }
 
         // --- Code Generation ---
         const codeInput = document.getElementById('code-input'), codeHistory = document.getElementById('code-history'), codePreviewIframe = document.getElementById('code-preview-iframe');
@@ -1092,7 +1261,8 @@
         function applyMove(board, move) { let piece = board[move.from[0]][move.from[1]]; board[move.to[0]][move.to[1]] = piece; board[move.from[0]][move.from[1]] = ''; if (piece.toLowerCase() === 'p' && (move.to[0] === 0 || move.to[0] === 7)) { board[move.to[0]][move.to[1]] = piece === 'P' ? 'Q' : 'q'; } }
         function createBoardCopy(board) { return board.map(row => row.slice()); }
 
-        // Initial render
+        // --- Initial Setup ---
+        appendMessage("Hello! I'm 3rabiano. How can I help you today?", 'ai');
         initChess();
     });
     </script>

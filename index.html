@@ -62,6 +62,31 @@
         .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
         .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        
+        /* Zones Styling */
+        .zone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .zone-card { background-color: #1e1f20; border-radius: 0.5rem; padding: 1.5rem; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .zone-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .zone-card i { font-size: 2.5rem; margin-bottom: 1rem; }
+        .zone-card h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .zone-card p { color: #a0aec0; }
+        .zone-detail-header { display: flex; align-items: center; margin-bottom: 1.5rem; }
+        .back-to-zones-btn { background: none; border: none; color: #a0aec0; font-size: 1.5rem; cursor: pointer; margin-right: 1rem; }
+        .back-to-zones-btn:hover { color: #fff; }
+
+        /* Islamic Mode Styling */
+        #islamic-feature[dir="rtl"] .menu-item i { margin-left: 15px; margin-right: 0; }
+        .islamic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .islamic-feature-card { background-color: #1e1f20; border-radius: 0.5rem; padding: 1.5rem; }
+        .prayer-time { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #333; }
+        .prayer-time:last-child { border-bottom: none; }
+        #qibla-compass { width: 150px; height: 150px; background-color: #131314; border-radius: 50%; border: 2px solid #333; position: relative; margin: 1rem auto; }
+        #qibla-arrow { width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 60px solid #2ECC71; position: absolute; top: 15px; left: 50%; transform-origin: 50% 60px; transform: translateX(-50%) rotate(135deg); /* Approximate for Damanhour, Egypt */ }
+        .compass-point { position: absolute; font-weight: bold; color: #a0aec0;}
+        .north { top: 5px; left: 50%; transform: translateX(-50%); }
+        .south { bottom: 5px; left: 50%; transform: translateX(-50%); }
+        .east { top: 50%; right: 5px; transform: translateY(-50%); }
+        .west { top: 50%; left: 5px; transform: translateY(-50%); }
     </style>
 </head>
 <body>
@@ -79,6 +104,8 @@
                 <h1 class="text-2xl font-bold mb-8 text-white">3rabiano AI</h1>
                 <nav>
                     <div class="menu-item active" data-feature="chat"><i class="fas fa-comments"></i><span>Ask Questions</span></div>
+                    <div class="menu-item" data-feature="islamic"><i class="fas fa-mosque"></i><span>Islamic Mode</span></div>
+                    <div class="menu-item" data-feature="zones"><i class="fas fa-th-large"></i><span>Zones</span></div>
                     <div class="menu-item" data-feature="generations"><i class="fas fa-magic"></i><span>Generations</span></div>
                     <div class="menu-item" data-feature="code"><i class="fas fa-code"></i><span>Code</span></div>
                     <div class="menu-item" data-feature="chess"><i class="fas fa-chess"></i><span>Play Chess</span></div>
@@ -106,6 +133,164 @@
                 </div>
             </div>
 
+            <!-- ISLAMIC MODE FEATURE -->
+            <div id="islamic-feature" class="feature-content hidden" dir="rtl">
+                <h2 class="text-3xl font-bold mb-2">الوضع الإسلامي</h2>
+                <p class="text-lg text-gray-400 mb-8" id="hijri-date-display">٢٩ محرم، ١٤٤٧ هـ</p>
+
+                <div class="islamic-grid">
+                    <!-- Prayer Times -->
+                    <div class="islamic-feature-card col-span-1 md:col-span-2">
+                        <h3 class="flex items-center"><i class="fas fa-clock ml-3"></i>أوقات الصلاة</h3>
+                        <p class="text-sm text-gray-500 mb-4">لمدينة دمنهور، مصر بتاريخ ٢٥ يوليو ٢٠٢٥</p>
+                        <div id="prayer-times-list">
+                            <div class="prayer-time"><span>الفجر</span><span>٤:٠٨ ص</span></div>
+                            <div class="prayer-time"><span>الظهر</span><span>١٢:٥٩ م</span></div>
+                            <div class="prayer-time"><span>العصر</span><span>٤:٣٧ م</span></div>
+                            <div class="prayer-time"><span>المغرب</span><span>٧:٥٥ م</span></div>
+                            <div class="prayer-time"><span>العشاء</span><span>٩:٢٣ م</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Qibla Direction -->
+                    <div class="islamic-feature-card text-center">
+                        <h3 class="flex items-center justify-center"><i class="fas fa-kaaba ml-3"></i>اتجاه القبلة</h3>
+                        <div id="qibla-compass">
+                            <div class="compass-point north">ش</div>
+                            <div class="compass-point south">ج</div>
+                            <div class="compass-point east">ق</div>
+                            <div class="compass-point west">غ</div>
+                            <div id="qibla-arrow"></div>
+                        </div>
+                        <p class="text-sm text-gray-500">اتجاه تقريبي لمدينة دمنهور، مصر. للحصول على اتجاه دقيق، استخدم تطبيقًا مخصصًا.</p>
+                    </div>
+
+                    <!-- Verse of the Day -->
+                    <div class="islamic-feature-card">
+                        <h3 class="flex items-center"><i class="fas fa-quran ml-3"></i>آية اليوم</h3>
+                        <div id="verse-of-the-day" class="result-box text-lg italic">"فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ"<br><span class="text-sm not-italic text-gray-400">- سورة البقرة، آية ١٥٢</span></div>
+                        <button id="new-verse-btn" class="mt-4 w-full">آية جديدة</button>
+                    </div>
+
+                    <!-- Hadith of the Day -->
+                    <div class="islamic-feature-card">
+                        <h3 class="flex items-center"><i class="fas fa-book-open ml-3"></i>حديث اليوم</h3>
+                        <div id="hadith-of-the-day" class="result-box italic">"خيركم خيركم لأهله."<br><span class="text-sm not-italic text-gray-400">- الترمذي</span></div>
+                        <button id="new-hadith-btn" class="mt-4 w-full">حديث جديد</button>
+                    </div>
+                    
+                    <!-- Islamic Q&A -->
+                    <div class="islamic-feature-card col-span-1 md:col-span-3">
+                         <h3 class="flex items-center"><i class="fas fa-question-circle ml-3"></i>سؤال وجواب إسلامي</h3>
+                         <textarea id="islamic-qa-prompt" placeholder="اسأل سؤالاً عن الإسلام..."></textarea>
+                         <button id="islamic-qa-btn" class="zone-generate-btn" data-prompt-id="islamic-qa-prompt" data-result-id="islamic-qa-result">احصل على إجابة</button>
+                         <div id="islamic-qa-result" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ZONES FEATURE -->
+            <div id="zones-feature" class="feature-content hidden">
+                <!-- Zone Selection Grid -->
+                <div id="zone-selection">
+                    <h2 class="text-3xl font-bold mb-6">Welcome to the Zones</h2>
+                    <p class="text-lg text-gray-400 mb-8">Select a zone to get started.</p>
+                    <div class="zone-grid">
+                        <div class="zone-card" data-zone="study">
+                            <i class="fas fa-brain text-blue-400"></i>
+                            <h3>Study Zone</h3>
+                            <p>A space for learning, focus, and education.</p>
+                        </div>
+                        <div class="zone-card" data-zone="work">
+                            <i class="fas fa-briefcase text-green-400"></i>
+                            <h3>Work Zone</h3>
+                            <p>A productivity space for professionals.</p>
+                        </div>
+                        <div class="zone-card" data-zone="kitchen">
+                            <i class="fas fa-utensils text-orange-400"></i>
+                            <h3>Kitchen Zone</h3>
+                            <p>Home, recipes, and cooking help.</p>
+                        </div>
+                        <div class="zone-card" data-zone="fun">
+                            <i class="fas fa-gamepad text-purple-400"></i>
+                            <h3>Fun Zone</h3>
+                            <p>A relaxing and creative space for entertainment.</p>
+                        </div>
+                        <div class="zone-card" data-zone="mind">
+                            <i class="fas fa-spa text-teal-400"></i>
+                            <h3>Mind Zone</h3>
+                            <p>For mental health, meditation, and self-care.</p>
+                        </div>
+                        <div class="zone-card" data-zone="developer">
+                            <i class="fas fa-laptop-code text-red-400"></i>
+                            <h3>Developer Zone</h3>
+                            <p>For coders and technical users.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Individual Zone Details -->
+                <div id="study-zone-detail" class="zone-detail hidden">
+                    <div class="zone-detail-header">
+                        <button class="back-to-zones-btn"><i class="fas fa-arrow-left"></i></button>
+                        <h2 class="text-3xl font-bold">🧠 Study Zone</h2>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="feature-panel"><h3>AI Tutor</h3><textarea id="ai-tutor-prompt" placeholder="Ask anything in math, science, languages..."></textarea><button data-prompt-id="ai-tutor-prompt" data-result-id="ai-tutor-result" class="zone-generate-btn">Get Answer</button><div id="ai-tutor-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>Notes & Flashcards Generator</h3><textarea id="notes-flashcards-prompt" placeholder="Paste your text here to generate notes and flashcards..."></textarea><button data-prompt-id="notes-flashcards-prompt" data-result-id="notes-flashcards-result" class="zone-generate-btn">Generate</button><div id="notes-flashcards-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>Quiz Maker</h3><textarea id="quiz-maker-prompt" placeholder="Enter a topic or paste text to create a quiz..."></textarea><button data-prompt-id="quiz-maker-prompt" data-result-id="quiz-maker-result" class="zone-generate-btn">Create Quiz</button><div id="quiz-maker-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>PDF Summarizer</h3><input type="file" id="pdf-upload" accept=".pdf" class="mb-4"><textarea id="pdf-summarizer-prompt" placeholder="Or paste text from a document here..."></textarea><button data-prompt-id="pdf-summarizer-prompt" data-result-id="pdf-summarizer-result" class="zone-generate-btn">Summarize</button><div id="pdf-summarizer-result" class="result-box"></div></div>
+                    </div>
+                </div>
+
+                <div id="work-zone-detail" class="zone-detail hidden">
+                     <div class="zone-detail-header"><button class="back-to-zones-btn"><i class="fas fa-arrow-left"></i></button><h2 class="text-3xl font-bold">💼 Work Zone</h2></div>
+                     <div class="space-y-6">
+                        <div class="feature-panel"><h3>AI Resume & Cover Letter Writer</h3><textarea id="resume-prompt" placeholder="Paste your job description and key skills..."></textarea><button data-prompt-id="resume-prompt" data-result-id="resume-result" class="zone-generate-btn">Generate</button><div id="resume-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>Email Generator</h3><textarea id="email-prompt" placeholder="Describe the email you need (e.g., a follow-up email to a client about a project)..."></textarea><button data-prompt-id="email-prompt" data-result-id="email-result" class="zone-generate-btn">Generate Email</button><div id="email-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>Business Idea Generator</h3><textarea id="business-idea-prompt" placeholder="Enter your interests or an industry..."></textarea><button data-prompt-id="business-idea-prompt" data-result-id="business-idea-result" class="zone-generate-btn">Get Ideas</button><div id="business-idea-result" class="result-box"></div></div>
+                     </div>
+                </div>
+                
+                <div id="kitchen-zone-detail" class="zone-detail hidden">
+                     <div class="zone-detail-header"><button class="back-to-zones-btn"><i class="fas fa-arrow-left"></i></button><h2 class="text-3xl font-bold">🍳 Kitchen Zone</h2></div>
+                     <div class="space-y-6">
+                        <div class="feature-panel"><h3>Recipe Generator</h3><textarea id="recipe-prompt" placeholder="List the ingredients you have..."></textarea><button data-prompt-id="recipe-prompt" data-result-id="recipe-result" class="zone-generate-btn">Find Recipes</button><div id="recipe-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>Meal Planner</h3><textarea id="meal-plan-prompt" placeholder="Describe your dietary needs and for how many days (e.g., 5-day low-carb plan)..."></textarea><button data-prompt-id="meal-plan-prompt" data-result-id="meal-plan-result" class="zone-generate-btn">Create Plan</button><div id="meal-plan-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>"Ask the Chef" AI Chat</h3><textarea id="chef-chat-prompt" placeholder="Ask a cooking question (e.g., how to perfectly sear a steak?)..."></textarea><button data-prompt-id="chef-chat-prompt" data-result-id="chef-chat-result" class="zone-generate-btn">Ask</button><div id="chef-chat-result" class="result-box"></div></div>
+                     </div>
+                </div>
+
+                <div id="fun-zone-detail" class="zone-detail hidden">
+                     <div class="zone-detail-header"><button class="back-to-zones-btn"><i class="fas fa-arrow-left"></i></button><h2 class="text-3xl font-bold">🎮 Fun Zone</h2></div>
+                     <div class="space-y-6">
+                        <div class="feature-panel"><h3>AI Joke / Meme Generator</h3><textarea id="joke-prompt" placeholder="Enter a topic for a joke (e.g., computers, cats)..."></textarea><button data-prompt-id="joke-prompt" data-result-id="joke-result" class="zone-generate-btn">Tell me a Joke</button><div id="joke-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>Story & Comic Maker</h3><textarea id="story-prompt" placeholder="Start a story or describe a comic scene..."></textarea><button data-prompt-id="story-prompt" data-result-id="story-result" class="zone-generate-btn">Generate</button><div id="story-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>Avatar / Cartoon Creator</h3><textarea id="avatar-prompt" placeholder="Describe the character you want to create..."></textarea><button data-prompt-id="avatar-prompt" data-result-id="avatar-result" class="zone-generate-btn">Create Avatar (SVG)</button><div id="avatar-result" class="result-box"></div></div>
+                     </div>
+                </div>
+
+                <div id="mind-zone-detail" class="zone-detail hidden">
+                     <div class="zone-detail-header"><button class="back-to-zones-btn"><i class="fas fa-arrow-left"></i></button><h2 class="text-3xl font-bold">🧘 Mind Zone</h2></div>
+                     <div class="space-y-6">
+                        <div class="feature-panel"><h3>AI Therapist (Chatbot)</h3><textarea id="therapist-prompt" placeholder="How are you feeling today? You can talk about anything on your mind."></textarea><button data-prompt-id="therapist-prompt" data-result-id="therapist-result" class="zone-generate-btn">Chat</button><div id="therapist-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>Daily Journal Generator</h3><textarea id="journal-prompt" placeholder="What was the highlight of your day? Or, enter a topic you'd like to reflect on."></textarea><button data-prompt-id="journal-prompt" data-result-id="journal-result" class="zone-generate-btn">Generate Entry</button><div id="journal-result" class="result-box"></div></div>
+                        <div class="feature-panel"><h3>Gratitude Prompts</h3><button id="gratitude-btn" class="zone-generate-btn" data-result-id="gratitude-result">Get a Prompt</button><div id="gratitude-result" class="result-box"></div></div>
+                     </div>
+                </div>
+                
+                <div id="developer-zone-detail" class="zone-detail hidden">
+                    <!-- This zone reuses the existing Code feature for a more integrated experience -->
+                    <div class="zone-detail-header">
+                        <button class="back-to-zones-btn"><i class="fas fa-arrow-left"></i></button>
+                        <h2 class="text-3xl font-bold">👨‍💻 Developer Zone</h2>
+                    </div>
+                    <p class="mb-4 text-gray-400">The Developer Zone uses the advanced tools from our main 'Code' section. You'll find the AI coding assistant, live editor, and more there.</p>
+                    <button id="go-to-code-feature" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Go to Code Tools</button>
+                </div>
+
+            </div>
+
             <!-- Generations Feature -->
             <div id="generations-feature" class="feature-content hidden">
                 <h2 class="text-3xl font-bold mb-6">Generations</h2>
@@ -127,23 +312,23 @@
 
                 <div id="video-gen-tab" class="gen-tab-content hidden">
                      <div class="bg-[#1e1f20] p-6 rounded-lg">
-                        <p class="text-center text-gray-400">Video generation is coming soon!</p>
+                         <p class="text-center text-gray-400">Video generation is coming soon!</p>
                      </div>
                 </div>
 
                 <div id="voice-gen-tab" class="gen-tab-content hidden">
                      <div class="bg-[#1e1f20] p-6 rounded-lg">
-                        <textarea id="voice-text-prompt" class="w-full bg-[#131314] border border-gray-600 rounded-lg p-3 mb-4" placeholder="Enter text to convert to speech..."></textarea>
-                        <button id="generate-voice-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Generate Voice</button>
-                        <div id="voice-output" class="mt-6"></div>
+                         <textarea id="voice-text-prompt" class="w-full bg-[#131314] border border-gray-600 rounded-lg p-3 mb-4" placeholder="Enter text to convert to speech..."></textarea>
+                         <button id="generate-voice-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Generate Voice</button>
+                         <div id="voice-output" class="mt-6"></div>
                      </div>
                 </div>
 
                 <div id="qrcode-gen-tab" class="gen-tab-content hidden">
                      <div class="bg-[#1e1f20] p-6 rounded-lg">
-                        <input type="text" id="qrcode-prompt" class="w-full bg-[#131314] border border-gray-600 rounded-lg p-3 mb-4" placeholder="Enter text or URL for QR code...">
-                        <button id="generate-qrcode-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Generate QR Code</button>
-                        <div id="qrcode-output" class="mt-6 p-4 bg-white rounded-lg flex justify-center items-center"></div>
+                         <input type="text" id="qrcode-prompt" class="w-full bg-[#131314] border border-gray-600 rounded-lg p-3 mb-4" placeholder="Enter text or URL for QR code...">
+                         <button id="generate-qrcode-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Generate QR Code</button>
+                         <div id="qrcode-output" class="mt-6 p-4 bg-white rounded-lg flex justify-center items-center"></div>
                      </div>
                 </div>
             </div>
@@ -152,50 +337,50 @@
             <div id="code-feature" class="feature-content hidden flex flex-col">
                  <h2 class="text-3xl font-bold mb-6">Code Tools</h2>
                  <div class="tabs code-tabs">
-                    <div class="tab code-tab active" data-code-tab="write">Write Code</div>
-                    <div class="tab code-tab" data-code-tab="workplace">AI Workplace</div>
-                    <div class="tab code-tab" data-code-tab="explainer">Code Explainer</div>
-                    <div class="tab code-tab" data-code-tab="expert">Chat with Expert</div>
+                     <div class="tab code-tab active" data-code-tab="write">Write Code</div>
+                     <div class="tab code-tab" data-code-tab="workplace">AI Workplace</div>
+                     <div class="tab code-tab" data-code-tab="explainer">Code Explainer</div>
+                     <div class="tab code-tab" data-code-tab="expert">Chat with Expert</div>
                  </div>
 
                  <div id="write-code-tab" class="code-tab-content flex flex-col flex-grow">
-                    <div class="code-preview-container">
-                        <div id="code-history" class="code-history p-4"></div>
-                        <div class="code-live-preview">
-                            <div class="code-preview-header"><span>Live Preview</span></div>
-                            <iframe id="code-preview-iframe"></iframe>
-                        </div>
-                    </div>
-                    <div class="chat-input-container"><input type="text" id="code-input" class="chat-input" placeholder="Describe the code you need (e.g., a blue button with rounded corners)..."></div>
+                     <div class="code-preview-container">
+                         <div id="code-history" class="code-history p-4"></div>
+                         <div class="code-live-preview">
+                             <div class="code-preview-header"><span>Live Preview</span></div>
+                             <iframe id="code-preview-iframe"></iframe>
+                         </div>
+                     </div>
+                     <div class="chat-input-container"><input type="text" id="code-input" class="chat-input" placeholder="Describe the code you need (e.g., a blue button with rounded corners)..."></div>
                  </div>
 
                  <div id="workplace-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
-                    <div class="feature-panel flex-grow flex flex-col">
-                        <h3>AI Workplace</h3>
-                        <textarea id="workplace-editor" class="flex-grow font-mono" placeholder="Write your HTML, CSS, and JavaScript here..."></textarea>
-                        <button id="workplace-help-btn">Ask AI for Help</button>
-                        <div id="workplace-result" class="result-box hidden"></div>
-                    </div>
+                     <div class="feature-panel flex-grow flex flex-col">
+                         <h3>AI Workplace</h3>
+                         <textarea id="workplace-editor" class="flex-grow font-mono" placeholder="Write your HTML, CSS, and JavaScript here..."></textarea>
+                         <button id="workplace-help-btn">Ask AI for Help</button>
+                         <div id="workplace-result" class="result-box hidden"></div>
+                     </div>
                  </div>
 
                  <div id="explainer-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
-                    <div class="feature-panel flex-grow flex flex-col">
-                        <h3>AI Code Explainer</h3>
-                        <textarea id="explainer-input" class="flex-grow font-mono" placeholder="Paste your code here..."></textarea>
-                        <button id="explain-code-btn">Explain Code</button>
-                        <div id="explainer-output" class="result-box"></div>
-                    </div>
+                     <div class="feature-panel flex-grow flex flex-col">
+                         <h3>AI Code Explainer</h3>
+                         <textarea id="explainer-input" class="flex-grow font-mono" placeholder="Paste your code here..."></textarea>
+                         <button id="explain-code-btn">Explain Code</button>
+                         <div id="explainer-output" class="result-box"></div>
+                     </div>
                  </div>
 
                  <div id="expert-code-tab" class="code-tab-content hidden flex-grow flex flex-col">
-                    <div class="feature-panel flex-grow flex flex-col">
-                        <h3>Chat with Code Expert</h3>
-                        <div id="expert-chat-history" class="result-box h-64 overflow-y-auto"></div>
-                        <div class="flex gap-2 mt-4">
-                            <input type="text" id="expert-chat-input" class="flex-grow" placeholder="Ask a coding question...">
-                            <button id="expert-chat-send-btn" class="w-auto">Send</button>
-                        </div>
-                    </div>
+                     <div class="feature-panel flex-grow flex flex-col">
+                         <h3>Chat with Code Expert</h3>
+                         <div id="expert-chat-history" class="result-box h-64 overflow-y-auto"></div>
+                         <div class="flex gap-2 mt-4">
+                             <input type="text" id="expert-chat-input" class="flex-grow" placeholder="Ask a coding question...">
+                             <button id="expert-chat-send-btn" class="w-auto">Send</button>
+                         </div>
+                     </div>
                  </div>
             </div>
             <!-- Chess Game Feature -->
@@ -307,6 +492,122 @@
         }
         setupTabSwitching('.generation-tab', '.gen-tab-content');
         setupTabSwitching('.code-tab', '.code-tab-content');
+
+        // --- ZONES LOGIC ---
+        const zoneSelection = document.getElementById('zone-selection');
+        const zoneDetails = document.querySelectorAll('.zone-detail');
+        const zoneCards = document.querySelectorAll('.zone-card');
+        const backToZonesBtns = document.querySelectorAll('.back-to-zones-btn');
+
+        zoneCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const zoneName = card.dataset.zone;
+                zoneSelection.classList.add('hidden');
+                document.getElementById(`${zoneName}-zone-detail`).classList.remove('hidden');
+            });
+        });
+
+        backToZonesBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                zoneDetails.forEach(detail => detail.classList.add('hidden'));
+                zoneSelection.classList.remove('hidden');
+            });
+        });
+        
+        document.getElementById('go-to-code-feature').addEventListener('click', () => {
+            // Simulate a click on the 'Code' menu item
+            document.querySelector('.menu-item[data-feature="code"]').click();
+        });
+        
+        // Generic handler for all generate buttons within zones
+        document.querySelectorAll('.zone-generate-btn').forEach(button => {
+            button.addEventListener('click', async () => {
+                const resultBox = document.getElementById(button.dataset.resultId);
+                let prompt = "";
+                // Handle buttons that don't have a prompt input (like Gratitude)
+                if(button.dataset.promptId) {
+                    prompt = document.getElementById(button.dataset.promptId).value;
+                } else {
+                    // Custom logic for buttons without a direct prompt input
+                    if(button.id === 'gratitude-btn') {
+                        prompt = "Give me a single, unique gratitude prompt to reflect on.";
+                    }
+                }
+
+                if (!prompt && button.dataset.promptId) return; // Only return if a prompt was expected but not given
+                
+                resultBox.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+
+                // Customize prompts for the AI
+                let finalPrompt = prompt;
+                const featureId = button.id;
+
+                // This is where you can create highly specific prompts for each tool
+                if (featureId === 'islamic-qa-btn') {
+                    finalPrompt = `أنت عالم إسلامي واسع المعرفة ومحترم. قدم إجابة واضحة وموجزة على السؤال التالي باللغة العربية، مع ذكر المصادر من القرآن والسنة عند الاقتضاء: ${prompt}`;
+                } else {
+                    const zone = button.closest('.zone-detail')?.id.split('-')[0];
+                    const tool = button.dataset.resultId.split('-')[0];
+                    if (zone === 'study') {
+                        if (tool === 'aiTutor') finalPrompt = `As an expert AI Tutor, explain the following concept clearly: ${prompt}`;
+                        if (tool === 'notesFlashcards') finalPrompt = `Generate concise study notes and a set of flashcards (question/answer format) from the following text: ${prompt}`;
+                        if (tool === 'quizMaker') finalPrompt = `Create a multiple-choice quiz with 5 questions and an answer key based on this topic: ${prompt}`;
+                    } else if (zone === 'work') {
+                         if (tool === 'resume') finalPrompt = `Acting as a professional resume writer, create a compelling summary or cover letter based on this job description and skills: ${prompt}`;
+                         if (tool === 'email') finalPrompt = `Write a professional email for the following purpose: ${prompt}`;
+                    } else if (zone === 'kitchen') {
+                        if (tool === 'recipe') finalPrompt = `I have these ingredients: ${prompt}. Generate 3 creative recipe ideas with instructions.`;
+                        if (tool === 'chefChat') finalPrompt = `As an AI Chef, answer this cooking question: ${prompt}`;
+                    } else if (zone === 'fun') {
+                        if (tool === 'joke') finalPrompt = `Tell me a funny, SFW joke about: ${prompt}`;
+                        if (tool === 'story') finalPrompt = `Continue this story or write a short story based on this prompt: ${prompt}`;
+                        if (tool === 'avatar') {
+                            const svgPrompt = `Create a simple, self-contained SVG vector graphic representing: "${prompt}". The SVG must have a viewBox="0 0 100 100" and use basic shapes and colors. Output ONLY the raw <svg> tag and its content. Do not include XML declarations or markdown backticks.`;
+                            const rawResponse = await generateTextResponse(svgPrompt);
+                            if (typeof rawResponse === 'string' && rawResponse.startsWith('<svg')) {
+                                 resultBox.innerHTML = rawResponse;
+                            } else {
+                                 resultBox.textContent = "Sorry, I couldn't create an avatar for that. Try a simpler description.";
+                            }
+                            return; // Exit here as we handled the response differently
+                        }
+                    } else if (zone === 'mind') {
+                        if (tool === 'therapist') finalPrompt = `You are a compassionate AI companion trained in active listening and providing supportive, non-judgmental responses based on CBT principles. A user has said: "${prompt}". Respond with empathy and an open-ended question. Do not give advice.`;
+                        if (tool === 'journal') finalPrompt = `Generate a thoughtful journal entry reflecting on this: ${prompt}`;
+                    }
+                }
+
+                const aiResponse = await generateTextResponse(finalPrompt);
+                resultBox.innerHTML = aiResponse.replace(/\n/g, '<br>');
+            });
+        });
+
+        // --- ISLAMIC MODE SPECIFIC LOGIC ---
+        const verses = [
+            { text: `"فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ"`, source: `- سورة البقرة، آية ١٥٢`},
+            { text: `"فَإِنَّ مَعَ الْعُسْرِ يُسْرًا"`, source: `- سورة الشرح، آية ٥`},
+            { text: `"وَهُوَ مَعَكُمْ أَيْنَ مَا كُنتُمْ"`, source: `- سورة الحديد، آية ٤`},
+            { text: `"وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا"`, source: `- سورة الطلاق، آية ٢`}
+        ];
+        const hadiths = [
+            { text: `"خيركم خيركم لأهله."`, source: `- الترمذي`},
+            { text: `"إنما الأعمال بالنيات."`, source: `- البخاري ومسلم`},
+            { text: `"من لم يشكر الناس لم يشكر الله."`, source: `- أبو داود`},
+            { text: `"طلب العلم فريضة على كل مسلم."`, source: `- ابن ماجه`}
+        ];
+
+        document.getElementById('new-verse-btn').addEventListener('click', () => {
+            const verseBox = document.getElementById('verse-of-the-day');
+            const randomVerse = verses[Math.floor(Math.random() * verses.length)];
+            verseBox.innerHTML = `"${randomVerse.text}"<br><span class="text-sm not-italic text-gray-400">${randomVerse.source}</span>`;
+        });
+        
+        document.getElementById('new-hadith-btn').addEventListener('click', () => {
+            const hadithBox = document.getElementById('hadith-of-the-day');
+            const randomHadith = hadiths[Math.floor(Math.random() * hadiths.length)];
+            hadithBox.innerHTML = `"${randomHadith.text}"<br><span class="text-sm not-italic text-gray-400">${randomHadith.source}</span>`;
+        });
+
 
         // --- Voice Mode ---
         voiceModeBtn.addEventListener('click', () => { if (!ELEVENLABS_API_KEY) { alert("Please add your ElevenLabs API key to use the voice feature."); return; } voiceModeOverlay.style.display = 'flex'; setVoiceModeUI('idle'); });
@@ -452,12 +753,8 @@
         
         // --- AI Workplace ---
         const workplaceEditor = document.getElementById('workplace-editor');
-        const workplaceIframe = document.getElementById('workplace-iframe');
         const workplaceHelpBtn = document.getElementById('workplace-help-btn');
         const workplaceResult = document.getElementById('workplace-result');
-        workplaceEditor.addEventListener('input', () => {
-            workplaceIframe.srcdoc = workplaceEditor.value;
-        });
         workplaceHelpBtn.addEventListener('click', async () => {
             const code = workplaceEditor.value;
             if (!code) return;
@@ -577,4 +874,3 @@
 
 </body>
 </html>
-

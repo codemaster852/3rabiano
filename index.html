@@ -58,6 +58,7 @@
         .feature-panel textarea { min-height: 100px; }
         .feature-panel button { background-color: #4285F4; color: white; font-weight: bold; padding: 0.5rem 1rem; border-radius: 0.5rem; width: 100%; margin-top: 1rem; }
         .feature-panel button:hover { background-color: #3367D6; }
+        .feature-panel button:disabled { background-color: #285cb3; cursor: not-allowed; }
         .result-box { margin-top: 1.5rem; background-color: #131314; padding: 1rem; border-radius: 0.5rem; min-height: 100px; white-space: pre-wrap; }
         .tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #333; }
         .tab { padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; }
@@ -99,10 +100,11 @@
         .auth-modal { background-color: #1e1f20; padding: 2rem; border-radius: 0.5rem; width: 90%; max-width: 400px; }
         .auth-modal h2 { text-align: center; margin-bottom: 1.5rem; }
         .auth-modal input { width: 100%; margin-bottom: 1rem; }
-        .auth-modal button { width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: none; font-weight: bold; cursor: pointer; }
+        .auth-modal button { width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: none; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
         .auth-modal button.primary { background-color: #4285F4; color: white; }
+        .auth-modal button.primary:disabled { background-color: #285cb3; cursor: not-allowed; }
         .auth-modal button.secondary { background-color: #333; color: white; margin-top: 0.5rem; }
-        .auth-modal #auth-error { color: #ef4444; text-align: center; margin-top: 1rem; min-height: 1.5rem; }
+        .auth-modal #auth-error, .auth-modal #auth-error-signup { color: #ef4444; text-align: center; margin-top: 1rem; min-height: 1.5rem; }
         .auth-toggle { text-align: center; margin-top: 1rem; font-size: 0.9rem; }
         .auth-toggle a { color: #4285F4; cursor: pointer; text-decoration: underline; }
     </style>
@@ -337,10 +339,6 @@
         const SUPABASE_URL = 'https://yurtisxjcqjvbpobbogo.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cnRpc3hqY3FqdmJwb2Jib2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NDI4MTIsImV4cCI6MjA2OTAxODgxMn0.R-jT8BeicNNCPfVE0iH5911ua3VdCKTX3vOBmr1mQC0';
 
-        if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
-            document.body.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:100vh; text-align:center; color:white; font-size:1.2rem;">Please update the SUPABASE_URL and SUPABASE_ANON_KEY in the script.</div>`;
-        }
-
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // --- GLOBAL STATE & UI ELEMENTS ---
@@ -372,29 +370,64 @@
         });
 
         loginBtn.addEventListener('click', async () => {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) authErrorDiv.textContent = error.message;
-            else authErrorDiv.textContent = '';
+            // 1. Clear previous errors and provide user feedback
+            authErrorDiv.textContent = '';
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+
+            try {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+
+                if (!email || !password) {
+                    throw new Error("Email and password are required.");
+                }
+
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    // This will handle Supabase-specific errors like "Invalid login credentials"
+                    throw error;
+                }
+                // If successful, the onAuthStateChange listener will handle the UI update.
+                // We don't need to do anything else here.
+
+            } catch (error) {
+                // Catch any error (from validation or Supabase) and display it
+                authErrorDiv.textContent = error.message;
+            } finally {
+                // 3. Re-enable the button regardless of outcome
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
         });
 
         signupBtn.addEventListener('click', async () => {
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            const fullName = document.getElementById('signup-fullname').value;
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: fullName,
-                        avatar_url: `https://api.dicebear.com/8.x/initials/svg?seed=${fullName}` // Default avatar
+            authErrorSignupDiv.textContent = '';
+            signupBtn.disabled = true;
+            signupBtn.textContent = 'Signing up...';
+            try {
+                const email = document.getElementById('signup-email').value;
+                const password = document.getElementById('signup-password').value;
+                const fullName = document.getElementById('signup-fullname').value;
+                const { error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: fullName,
+                            avatar_url: `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(fullName)}`
+                        }
                     }
-                }
-            });
-            if (error) authErrorSignupDiv.textContent = error.message;
-            else authErrorSignupDiv.textContent = 'Check your email for a confirmation link!';
+                });
+                if (error) throw error;
+                authErrorSignupDiv.textContent = 'Check your email for a confirmation link!';
+            } catch (error) {
+                authErrorSignupDiv.textContent = error.message;
+            } finally {
+                signupBtn.disabled = false;
+                signupBtn.textContent = 'Sign Up';
+            }
         });
 
         logoutBtn.addEventListener('click', async () => {
@@ -403,14 +436,14 @@
 
         // Listen for auth state changes
         supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session) {
+            if (event === 'SIGNED_IN' && session) {
                 currentUser = session.user;
                 await loadUserProfile();
                 authContainer.classList.add('hidden');
                 appContainer.classList.remove('hidden');
                 await loadChatHistory();
                 listenToChatHistory();
-            } else {
+            } else if (event === 'SIGNED_OUT') {
                 currentUser = null;
                 userProfile = null;
                 authContainer.classList.remove('hidden');
@@ -447,26 +480,34 @@
         
         updateProfileBtn.addEventListener('click', async () => {
             if (!currentUser) return;
-            const updates = {
-                id: currentUser.id,
-                username: document.getElementById('profile-username').value,
-                full_name: document.getElementById('profile-fullname').value,
-                website: document.getElementById('profile-website').value,
-                avatar_url: document.getElementById('profile-avatar').value,
-                updated_at: new Date(),
-            };
+            updateProfileBtn.disabled = true;
+            updateProfileBtn.textContent = 'Updating...';
+            profileMessageDiv.textContent = '';
             
-            const { error } = await supabase.from('profiles').upsert(updates);
-            
-            if (error) {
-                profileMessageDiv.textContent = `Error: ${error.message}`;
-                profileMessageDiv.classList.remove('text-green-400');
-                profileMessageDiv.classList.add('text-red-400');
-            } else {
+            try {
+                const updates = {
+                    id: currentUser.id,
+                    username: document.getElementById('profile-username').value,
+                    full_name: document.getElementById('profile-fullname').value,
+                    website: document.getElementById('profile-website').value,
+                    avatar_url: document.getElementById('profile-avatar').value,
+                    updated_at: new Date(),
+                };
+                
+                const { error } = await supabase.from('profiles').upsert(updates);
+                if (error) throw error;
+
                 profileMessageDiv.textContent = 'Profile updated successfully!';
                 profileMessageDiv.classList.add('text-green-400');
                 profileMessageDiv.classList.remove('text-red-400');
-                await loadUserProfile(); // Reload profile data
+                await loadUserProfile();
+            } catch (error) {
+                profileMessageDiv.textContent = `Error: ${error.message}`;
+                profileMessageDiv.classList.remove('text-green-400');
+                profileMessageDiv.classList.add('text-red-400');
+            } finally {
+                updateProfileBtn.disabled = false;
+                updateProfileBtn.textContent = 'Update Profile';
             }
         });
 
@@ -491,14 +532,23 @@
         }
         
         function listenToChatHistory() {
-            if (chatHistorySubscription) return; // Don't subscribe twice
+            if (chatHistorySubscription) {
+                chatHistorySubscription.unsubscribe();
+            }
             chatHistorySubscription = supabase
                 .channel('public:chat_history')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_history', filter: `user_id=eq.${currentUser.id}` }, payload => {
-                    // This is commented out to prevent duplicating messages added optimistically.
-                    // If you need real-time updates from other clients, you'd handle this differently.
-                    // console.log('New message received!', payload.new);
-                    // appendMessage(payload.new.content, payload.new.sender, false);
+                    // Only append if it's an AI message to prevent duplicating user messages
+                    if (payload.new.sender === 'ai') {
+                        const lastMessage = chatHistoryEl.querySelector('.chat-message:last-child');
+                        // Check if the last message is a typing indicator and update it
+                        if (lastMessage && lastMessage.querySelector('.typing-indicator')) {
+                            lastMessage.querySelector('p').innerHTML = payload.new.content.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                        } else {
+                            // Otherwise, append a new message
+                            appendMessage(payload.new.content, payload.new.sender, false);
+                        }
+                    }
                 })
                 .subscribe();
         }
@@ -521,17 +571,19 @@
                 if (error) throw error;
                 
                 const aiResponse = data.response;
-                typingIndicator.querySelector('p').innerHTML = aiResponse.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                // The onSnapshot listener will update the UI, so we just need to insert the AI response to the DB.
+                // typingIndicator.querySelector('p').innerHTML = aiResponse.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                 
-                // Add AI response to DB
-                await supabase.from('chat_history').insert({
+                // Add AI response to DB, which will trigger the listener
+                const { error: insertError } = await supabase.from('chat_history').insert({
                     user_id: currentUser.id,
                     sender: 'ai',
                     content: aiResponse
                 });
+                if (insertError) throw insertError;
 
             } catch (error) {
-                console.error('Error calling text-generation function:', error.message);
+                console.error('Error in chat flow:', error.message);
                 typingIndicator.querySelector('p').textContent = 'Sorry, I encountered an error.';
             }
         }
@@ -561,7 +613,7 @@
             chatHistoryEl.appendChild(messageDiv);
             chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
 
-            if (saveToDb && currentUser) {
+            if (saveToDb && currentUser && sender === 'user') {
                 const { error } = await supabase.from('chat_history').insert({
                     user_id: currentUser.id,
                     sender: sender,
@@ -632,9 +684,6 @@
 
 
         // --- ALL OTHER FEATURE LOGIC (mostly unchanged, but using secure API calls) ---
-        // This is a placeholder for all the other event listeners and functions from the original file.
-        // They need to be adapted to use `generateTextResponse()` instead of the old insecure functions.
-        // Example for one button:
         document.getElementById('solve-math-btn').addEventListener('click', async () => { 
             const prompt = document.getElementById('math-prompt').value; 
             const resultBox = document.getElementById('math-result'); 
@@ -665,11 +714,6 @@
             });
         });
         
-        // --- All other functions and event listeners from the original file go here ---
-        // Make sure to replace any direct API calls with calls to the new secure functions
-        // like `generateTextResponse` and `generateImage`.
-        
-        // Example of adapting another feature
         document.getElementById('research-btn').addEventListener('click', async () => { 
             const prompt = document.getElementById('research-prompt').value; 
             const resultBox = document.getElementById('research-result'); 

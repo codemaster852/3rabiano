@@ -3,297 +3,198 @@
 <html lang="en">
 
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>3rabiano - AI Tool</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" type="image/png" href="/path/to/your/icon.png">
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-
-    <!-- Monaco Editor CDN -->
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/editor/editor.main.css">
-
-    <style>
-
-        body { font-family: 'Inter', sans-serif; background-color: #131314; color: #e3e3e3; }
-
-        .main-container { display: flex; height: 100vh; }
-
-        .sidebar { width: 250px; background-color: #1e1f20; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
-
-        .content-area { flex-grow: 1; padding: 20px 40px; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; }
-
-        .chat-input-container { position: sticky; bottom: 0; padding: 20px 0; background-color: #131314; }
-
-        .chat-input { background-color: #1e1f20; border: 1px solid #333; border-radius: 50px; padding: 15px 25px; color: #e3e3e3; width: 100%; }
-
-        .menu-item { display: flex; align-items: center; padding: 10px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
-
-        .menu-item:hover, .menu-item.active { background-color: #282a2b; }
-
-        .menu-item i { margin-right: 15px; width: 20px; text-align: center; }
-
-        .chat-message { padding: 15px; border-radius: 12px; margin-bottom: 15px; max-width: 80%; display: flex; align-items: flex-start; }
-
-        .user-message { background-color: #282a2b; align-self: flex-end; margin-left: auto; }
-
-        .ai-message { background-color: #1e1f20; align-self: flex-start; }
-
-        .avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
-
-        .user-avatar { background-color: #4a4a4a; }
-
-        .ai-avatar { background: linear-gradient(135deg, #4285F4 0%, #34A853 100%); }
-
-        .chess-board { width: 400px; height: 400px; display: grid; grid-template-columns: repeat(8, 1fr); border: 2px solid #333; }
-
-        .chess-square { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 36px; }
-
-        .chess-square.light { background-color: #f0d9b5; }
-
-        .chess-square.dark { background-color: #b58863; }
-
-        .chess-piece { cursor: grab; }
-
-        .hidden { display: none; }
-
-        #voice-mode-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(19, 19, 20, 0.98); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-
-        #exit-voice-mode-btn { position: absolute; top: 30px; right: 30px; font-size: 24px; cursor: pointer; }
-
-        #voice-mic-circle { width: 150px; height: 150px; border-radius: 50%; background-color: #4285F4; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
-
-        #voice-mic-circle.listening { background-color: #d9534f; animation: pulse 1.5s infinite; }
-
-        #voice-mic-circle:hover { transform: scale(1.05); }
-
-        #voice-mode-status-text { margin-top: 30px; font-size: 1.2rem; color: #e3e3e3; text-align: center; max-width: 80%; }
-
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(217, 83, 79, 0); } 100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); } }
-
-        select { background-color: #282a2b; color: white; padding: 8px; border-radius: 5px; border: 1px solid #333; }
-
-        .code-preview-container { display: flex; gap: 1rem; flex-grow: 1; height: calc(100vh - 250px); }
-
-        .code-history, .code-live-preview { flex: 1; overflow-y: auto; background-color: #1e1f20; border-radius: 8px; }
-
-        #code-preview-iframe { width: 100%; height: 100%; border: none; border-radius: 8px; background-color: white; }
-
-        .code-preview-header { background-color: #282a2b; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-
-        .action-btn { background-color: #4a4a4a; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-
-        .action-btn:hover { background-color: #5a5a5a; }
-
-        #image-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(256px, 1fr)); gap: 1rem; }
-
-        .gallery-item { position: relative; }
-
-        .gallery-item img { width: 100%; height: auto; border-radius: 8px; display: block; }
-
-        .gallery-item .gallery-item-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s; display: flex; justify-content: center; align-items: center; }
-
-        .gallery-item:hover .gallery-item-overlay { opacity: 1; }
-
-        .feature-panel { background-color: #1e1f20; padding: 1.5rem; border-radius: 0.5rem; }
-
-        .feature-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-
-        .feature-panel h3 { font-size: 1.25rem; font-weight: 600; margin: 0; }
-
-        .feature-panel textarea, .feature-panel input { width: 100%; background-color: #131314; border: 1px solid #333; border-radius: 0.5rem; padding: 0.75rem; color: #e3e3e3; }
-
-        .feature-panel textarea { min-height: 100px; }
-
-        .feature-panel button { background-color: #4285F4; color: white; font-weight: bold; padding: 0.5rem 1rem; border-radius: 0.5rem; width: 100%; margin-top: 1rem; }
-
-        .feature-panel button:hover { background-color: #3367D6; }
-
-        .result-box { margin-top: 1.5rem; background-color: #131314; padding: 1rem; border-radius: 0.5rem; min-height: 100px; white-space: pre-wrap; }
-
-        .tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #333; }
-
-        .tab { padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; }
-
-        .tab.active { border-bottom-color: #4285F4; color: #4285F4; }
-
-        .typing-indicator span { height: 8px; width: 8px; background-color: #9ca3af; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; }
-
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
-
-        
-
-        /* Zones Styling */
-
-        .zone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
-
-        .zone-card { background-color: #1e1f20; border-radius: 0.5rem; padding: 1.5rem; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-
-        .zone-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-
-        .zone-card i { font-size: 2.5rem; margin-bottom: 1rem; }
-
-        .zone-card h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
-
-        .zone-card p { color: #a0aec0; }
-
-        .zone-detail-header { display: flex; align-items: center; margin-bottom: 1.5rem; }
-
-        .back-to-zones-btn { background: none; border: none; color: #a0aec0; font-size: 1.5rem; cursor: pointer; margin-right: 1rem; }
-
-        .back-to-zones-btn:hover { color: #fff; }
-
-
-
-        /* Islamic Mode Styling */
-
-        #islamic-feature[dir="rtl"] .menu-item i { margin-left: 15px; margin-right: 0; }
-
-        .islamic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-
-        .islamic-feature-card { background-color: #1e1f20; border-radius: 0.5rem; padding: 1.5rem; }
-
-        .prayer-time { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #333; }
-
-        .prayer-time:last-child { border-bottom: none; }
-
-        #qibla-compass { width: 150px; height: 150px; background-color: #131314; border-radius: 50%; border: 2px solid #333; position: relative; margin: 1rem auto; }
-
-        #qibla-arrow { width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 60px solid #2ECC71; position: absolute; top: 15px; left: 50%; transform-origin: 50% 60px; transform: translateX(-50%) rotate(135deg); /* Approximate for Damanhour, Egypt */ }
-
-        .compass-point { position: absolute; font-weight: bold; color: #a0aec0;}
-
-        .north { top: 5px; left: 50%; transform: translateX(-50%); }
-
-        .south { bottom: 5px; left: 50%; transform: translateX(-50%); }
-
-        .east { top: 50%; right: 5px; transform: translateY(-50%); }
-
-        .west { top: 50%; left: 5px; transform: translateY(-50%); }
-
-        
-
-        /* AI Workplace Styling */
-
-        #workplace-container { display: flex; flex-grow: 1; gap: 1rem; }
-
-        #workplace-editor-container { flex: 1; display: flex; flex-direction: column; }
-
-        #workplace-preview-container { flex: 1; display: flex; flex-direction: column; }
-
-        #workplace-editor { flex-grow: 1; border-radius: 8px; overflow: hidden; }
-
-        #workplace-preview { width: 100%; flex-grow: 1; border: none; border-radius: 8px; background-color: white; }
-
-        .workplace-header { background-color: #282a2b; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-/* --- Add this code to the bottom of your <style> block --- */
-
-@media (max-width: 768px) {
-    /* Main Layout Stacking */
-    .main-container {
-        flex-direction: column;
-        height: auto; /* Allow the container to grow with content */
-    }
-
-    .sidebar {
-        width: 100%;
-        height: auto;
-        flex-direction: column; /* Stack sidebar items vertically again */
-        padding-bottom: 20px;
-    }
-
-    .sidebar h1 {
-        text-align: center;
-        margin-bottom: 1rem;
-    }
-    
-    /* Make the navigation wrap nicely */
-    .sidebar nav {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: center;
-    }
-    
-    .menu-item {
-        flex-grow: 1; /* Allow items to grow and fill space */
-        flex-basis: 120px; /* Give items a base width */
-        justify-content: center;
-    }
-    
-    .menu-item i {
-        margin-right: 8px; /* Keep a small margin for the icon */
-    }
-
-    .content-area {
-        height: auto;
-        overflow-y: visible; /* Let the entire page scroll */
-        padding: 20px 15px;
-    }
-    
-    .chat-input-container {
-        padding: 10px 15px;
-        margin: 0 -15px; /* Make the input stretch to the screen edges */
-    }
-
-    .chat-message {
-        max-width: 90%; /* Allow messages to use more width */
-    }
-
-    /* Adjust specific feature layouts */
-    .zone-grid, .islamic-grid {
-        /* Force cards into a single column on mobile */
-        grid-template-columns: 1fr;
-    }
-    
-    .islamic-feature-card {
-        /* Ensure all cards are spanned to full width */
-        grid-column: 1 / -1 !important;
-    }
-
-    .code-preview-container,
-    #workplace-container {
-        flex-direction: column;
-        height: auto; /* Remove fixed height */
-    }
-
-    .code-preview-container > div,
-    #workplace-container > div {
-        min-height: 400px; /* Give editor/preview a decent height */
-    }
-
-    .chess-board {
-        width: 90vw; /* Use viewport width for the board */
-        height: 90vw; /* Keep it square */
-    }
-    
-    /* Adjust text sizes for readability */
-    h2 {
-        font-size: 1.75rem;
-    }
-    
-    .zone-card h3, .feature-panel h3 {
-        font-size: 1.15rem;
-    }
-}
-    </style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3rabiano - AI Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Corrected Favicon Link -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <!-- Monaco Editor CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/editor/editor.main.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #131314; color: #e3e3e3; }
+        .main-container { display: flex; height: 100vh; }
+        .sidebar { width: 250px; background-color: #1e1f20; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+        .content-area { flex-grow: 1; padding: 20px 40px; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; }
+        .chat-input-container { position: sticky; bottom: 0; padding: 20px 0; background-color: #131314; }
+        .chat-input { background-color: #1e1f20; border: 1px solid #333; border-radius: 50px; padding: 15px 25px; color: #e3e3e3; width: 100%; }
+        .menu-item { display: flex; align-items: center; padding: 10px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
+        .menu-item:hover, .menu-item.active { background-color: #282a2b; }
+        .menu-item i { margin-right: 15px; width: 20px; text-align: center; }
+        .chat-message { padding: 15px; border-radius: 12px; margin-bottom: 15px; max-width: 80%; display: flex; align-items: flex-start; }
+        .user-message { background-color: #282a2b; align-self: flex-end; margin-left: auto; }
+        .ai-message { background-color: #1e1f20; align-self: flex-start; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+        .user-avatar { background-color: #4a4a4a; }
+        .ai-avatar { background: linear-gradient(135deg, #4285F4 0%, #34A853 100%); }
+        .chess-board { width: 400px; height: 400px; display: grid; grid-template-columns: repeat(8, 1fr); border: 2px solid #333; }
+        .chess-square { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 36px; }
+        .chess-square.light { background-color: #f0d9b5; }
+        .chess-square.dark { background-color: #b58863; }
+        .chess-piece { cursor: grab; }
+        .hidden { display: none; }
+        #voice-mode-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(19, 19, 20, 0.98); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #exit-voice-mode-btn { position: absolute; top: 30px; right: 30px; font-size: 24px; cursor: pointer; }
+        #voice-mic-circle { width: 150px; height: 150px; border-radius: 50%; background-color: #4285F4; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
+        #voice-mic-circle.listening { background-color: #d9534f; animation: pulse 1.5s infinite; }
+        #voice-mic-circle:hover { transform: scale(1.05); }
+        #voice-mode-status-text { margin-top: 30px; font-size: 1.2rem; color: #e3e3e3; text-align: center; max-width: 80%; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(217, 83, 79, 0); } 100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); } }
+        select { background-color: #282a2b; color: white; padding: 8px; border-radius: 5px; border: 1px solid #333; }
+        .code-preview-container { display: flex; gap: 1rem; flex-grow: 1; height: calc(100vh - 250px); }
+        .code-history, .code-live-preview { flex: 1; overflow-y: auto; background-color: #1e1f20; border-radius: 8px; }
+        #code-preview-iframe { width: 100%; height: 100%; border: none; border-radius: 8px; background-color: white; }
+        .code-preview-header { background-color: #282a2b; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .action-btn { background-color: #4a4a4a; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .action-btn:hover { background-color: #5a5a5a; }
+        #image-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(256px, 1fr)); gap: 1rem; }
+        .gallery-item { position: relative; }
+        .gallery-item img { width: 100%; height: auto; border-radius: 8px; display: block; }
+        .gallery-item .gallery-item-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s; display: flex; justify-content: center; align-items: center; }
+        .gallery-item:hover .gallery-item-overlay { opacity: 1; }
+        .feature-panel { background-color: #1e1f20; padding: 1.5rem; border-radius: 0.5rem; }
+        .feature-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .feature-panel h3 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+        .feature-panel textarea, .feature-panel input { width: 100%; background-color: #131314; border: 1px solid #333; border-radius: 0.5rem; padding: 0.75rem; color: #e3e3e3; }
+        .feature-panel textarea { min-height: 100px; }
+        .feature-panel button { background-color: #4285F4; color: white; font-weight: bold; padding: 0.5rem 1rem; border-radius: 0.5rem; width: 100%; margin-top: 1rem; }
+        .feature-panel button:hover { background-color: #3367D6; }
+        .result-box { margin-top: 1.5rem; background-color: #131314; padding: 1rem; border-radius: 0.5rem; min-height: 100px; white-space: pre-wrap; }
+        .tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #333; }
+        .tab { padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab.active { border-bottom-color: #4285F4; color: #4285F4; }
+        .typing-indicator span { height: 8px; width: 8px; background-color: #9ca3af; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        
+        /* Zones Styling */
+        .zone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .zone-card { background-color: #1e1f20; border-radius: 0.5rem; padding: 1.5rem; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .zone-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .zone-card i { font-size: 2.5rem; margin-bottom: 1rem; }
+        .zone-card h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .zone-card p { color: #a0aec0; }
+        .zone-detail-header { display: flex; align-items: center; margin-bottom: 1.5rem; }
+        .back-to-zones-btn { background: none; border: none; color: #a0aec0; font-size: 1.5rem; cursor: pointer; margin-right: 1rem; }
+        .back-to-zones-btn:hover { color: #fff; }
+
+        /* Islamic Mode Styling */
+        #islamic-feature[dir="rtl"] .menu-item i { margin-left: 15px; margin-right: 0; }
+        .islamic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .islamic-feature-card { background-color: #1e1f20; border-radius: 0.5rem; padding: 1.5rem; }
+        .prayer-time { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #333; }
+        .prayer-time:last-child { border-bottom: none; }
+        #qibla-compass { width: 150px; height: 150px; background-color: #131314; border-radius: 50%; border: 2px solid #333; position: relative; margin: 1rem auto; }
+        #qibla-arrow { width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 60px solid #2ECC71; position: absolute; top: 15px; left: 50%; transform-origin: 50% 60px; transform: translateX(-50%) rotate(135deg); /* Approximate for Damanhour, Egypt */ }
+        .compass-point { position: absolute; font-weight: bold; color: #a0aec0;}
+        .north { top: 5px; left: 50%; transform: translateX(-50%); }
+        .south { bottom: 5px; left: 50%; transform: translateX(-50%); }
+        .east { top: 50%; right: 5px; transform: translateY(-50%); }
+        .west { top: 50%; left: 5px; transform: translateY(-50%); }
+        
+        /* AI Workplace Styling */
+        #workplace-container { display: flex; flex-grow: 1; gap: 1rem; }
+        #workplace-editor-container { flex: 1; display: flex; flex-direction: column; }
+        #workplace-preview-container { flex: 1; display: flex; flex-direction: column; }
+        #workplace-editor { flex-grow: 1; border-radius: 8px; overflow: hidden; }
+        #workplace-preview { width: 100%; flex-grow: 1; border: none; border-radius: 8px; background-color: white; }
+        .workplace-header { background-color: #282a2b; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+        /* --- Mobile-Friendly Styles --- */
+        @media (max-width: 768px) {
+            /* Main Layout Stacking */
+            .main-container {
+                flex-direction: column;
+                height: auto; /* Allow the container to grow with content */
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: column; /* Stack sidebar items vertically again */
+                padding-bottom: 20px;
+            }
+
+            .sidebar h1 {
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+            
+            /* Make the navigation wrap nicely */
+            .sidebar nav {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+            }
+            
+            .menu-item {
+                flex-grow: 1; /* Allow items to grow and fill space */
+                flex-basis: 120px; /* Give items a base width */
+                justify-content: center;
+            }
+            
+            .menu-item i {
+                margin-right: 8px; /* Keep a small margin for the icon */
+            }
+
+            .content-area {
+                height: auto;
+                overflow-y: visible; /* Let the entire page scroll */
+                padding: 20px 15px;
+            }
+            
+            .chat-input-container {
+                padding: 10px 15px;
+                margin: 0 -15px; /* Make the input stretch to the screen edges */
+            }
+
+            .chat-message {
+                max-width: 90%; /* Allow messages to use more width */
+            }
+
+            /* Adjust specific feature layouts */
+            .zone-grid, .islamic-grid {
+                /* Force cards into a single column on mobile */
+                grid-template-columns: 1fr;
+            }
+            
+            .islamic-feature-card {
+                /* Ensure all cards are spanned to full width */
+                grid-column: 1 / -1 !important;
+            }
+
+            .code-preview-container,
+            #workplace-container {
+                flex-direction: column;
+                height: auto; /* Remove fixed height */
+            }
+
+            .code-preview-container > div,
+            #workplace-container > div {
+                min-height: 400px; /* Give editor/preview a decent height */
+            }
+
+            .chess-board {
+                width: 90vw; /* Use viewport width for the board */
+                height: 90vw; /* Keep it square */
+            }
+            
+            /* Adjust text sizes for readability */
+            h2 {
+                font-size: 1.75rem;
+            }
+            
+            .zone-card h3, .feature-panel h3 {
+                font-size: 1.15rem;
+            }
+        }
+    </style>
 </head>
-
 <body>
 
     <!-- Full Screen Voice Mode -->

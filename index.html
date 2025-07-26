@@ -400,8 +400,20 @@
                 const email = document.getElementById('login-email').value;
                 const password = document.getElementById('login-password').value;
                 if (!email || !password) throw new Error("Email and password are required.");
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                
+                // **UPDATED LOGIC**
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
                 if (error) throw error;
+                
+                // If login is successful, directly show the app UI.
+                if (data.session) {
+                    await showAppUI(data.session);
+                } else {
+                    // This case should ideally not happen if there's no error, but it's good practice.
+                    throw new Error("Login failed. Please try again.");
+                }
+
             } catch (error) {
                 authErrorDiv.textContent = error.message;
             } finally {
@@ -442,16 +454,14 @@
             await supabase.auth.signOut();
         });
 
-        // Listen for auth state changes
+        // Listen for auth state changes (still useful for logout and session expiry)
         supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session) {
-                await showAppUI(session);
-            } else {
+            if (!session) {
                 showAuthUI();
             }
         });
         
-        // **NEW**: Check for an existing session on page load
+        // Check for an existing session on page load
         async function checkInitialSession() {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {

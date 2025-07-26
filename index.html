@@ -351,16 +351,30 @@
 
         // --- UI HELPER FUNCTIONS ---
         async function showAppUI(session) {
-            if (!session) return;
+            console.log("showAppUI called with session:", session);
+            if (!session || !session.user) {
+                console.log("showAppUI: No session or user, showing auth UI.");
+                showAuthUI();
+                return;
+            }
             currentUser = session.user;
-            await loadUserProfile();
+
+            // Immediately switch the UI
             authContainer.classList.add('hidden');
             appContainer.classList.remove('hidden');
-            await loadChatHistory();
-            listenToChatHistory();
+
+            // Then, load data in the background with error handling
+            try {
+                await loadUserProfile();
+                await loadChatHistory();
+                listenToChatHistory();
+            } catch (error) {
+                console.error("Error loading user data after login:", error);
+            }
         }
 
         function showAuthUI() {
+            console.log("showAuthUI called.");
             currentUser = null;
             userProfile = null;
             authContainer.classList.remove('hidden');
@@ -452,10 +466,12 @@
 
         // This is the single source of truth for UI state.
         supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth event:', event, 'Session:', session); // For debugging
-            if (session) {
-                await showAppUI(session);
-            } else {
+            console.log('Auth event:', event, 'Session:', session);
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                if(session) {
+                    await showAppUI(session);
+                }
+            } else if (event === 'SIGNED_OUT') {
                 showAuthUI();
             }
         });
@@ -472,7 +488,8 @@
             }
         }
         
-        checkInitialSession(); // Run the check as soon as the script loads
+        // The onAuthStateChange handles this now, but we keep it as a fallback.
+        // checkInitialSession(); 
 
         // --- PROFILE MANAGEMENT ---
         const updateProfileBtn = document.getElementById('update-profile-btn');
@@ -480,6 +497,7 @@
 
         async function loadUserProfile() {
             if (!currentUser) return;
+            console.log("Loading profile for user:", currentUser.id);
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*')
@@ -487,13 +505,17 @@
                 .single();
             
             if (data) {
+                console.log("Profile data loaded:", data);
                 userProfile = data;
                 document.getElementById('profile-username').value = userProfile.username || '';
                 document.getElementById('profile-fullname').value = userProfile.full_name || '';
                 document.getElementById('profile-website').value = userProfile.website || '';
                 document.getElementById('profile-avatar').value = userProfile.avatar_url || '';
-            } else if (error && error.message !== 'JSON object requested, multiple (or no) rows returned') {
-                console.error('Error loading profile:', error.message);
+            } else {
+                console.error('Error loading profile:', error ? error.message : "No data returned");
+                if (error && error.message.includes('0 rows')) {
+                    // This can happen if the profile trigger is slow. We can ignore it for now.
+                }
             }
         }
         
@@ -536,6 +558,7 @@
 
         async function loadChatHistory() {
             if (!currentUser) return;
+            console.log("Loading chat history...");
             chatHistoryEl.innerHTML = ''; // Clear existing messages
             const { data, error } = await supabase
                 .from('chat_history')
@@ -547,6 +570,7 @@
                 console.error("Error loading chat history:", error.message);
                 return;
             }
+            console.log("Chat history loaded:", data.length, "messages");
             data.forEach(msg => appendMessage(msg.content, msg.sender, false));
         }
         

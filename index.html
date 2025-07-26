@@ -199,7 +199,96 @@
         #workplace-preview { width: 100%; flex-grow: 1; border: none; border-radius: 8px; background-color: white; }
 
         .workplace-header { background-color: #282a2b; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+/* --- Add this code to the bottom of your <style> block --- */
 
+@media (max-width: 768px) {
+    /* Main Layout Stacking */
+    .main-container {
+        flex-direction: column;
+        height: auto; /* Allow the container to grow with content */
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: column; /* Stack sidebar items vertically again */
+        padding-bottom: 20px;
+    }
+
+    .sidebar h1 {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    /* Make the navigation wrap nicely */
+    .sidebar nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+    
+    .menu-item {
+        flex-grow: 1; /* Allow items to grow and fill space */
+        flex-basis: 120px; /* Give items a base width */
+        justify-content: center;
+    }
+    
+    .menu-item i {
+        margin-right: 8px; /* Keep a small margin for the icon */
+    }
+
+    .content-area {
+        height: auto;
+        overflow-y: visible; /* Let the entire page scroll */
+        padding: 20px 15px;
+    }
+    
+    .chat-input-container {
+        padding: 10px 15px;
+        margin: 0 -15px; /* Make the input stretch to the screen edges */
+    }
+
+    .chat-message {
+        max-width: 90%; /* Allow messages to use more width */
+    }
+
+    /* Adjust specific feature layouts */
+    .zone-grid, .islamic-grid {
+        /* Force cards into a single column on mobile */
+        grid-template-columns: 1fr;
+    }
+    
+    .islamic-feature-card {
+        /* Ensure all cards are spanned to full width */
+        grid-column: 1 / -1 !important;
+    }
+
+    .code-preview-container,
+    #workplace-container {
+        flex-direction: column;
+        height: auto; /* Remove fixed height */
+    }
+
+    .code-preview-container > div,
+    #workplace-container > div {
+        min-height: 400px; /* Give editor/preview a decent height */
+    }
+
+    .chess-board {
+        width: 90vw; /* Use viewport width for the board */
+        height: 90vw; /* Keep it square */
+    }
+    
+    /* Adjust text sizes for readability */
+    h2 {
+        font-size: 1.75rem;
+    }
+    
+    .zone-card h3, .feature-panel h3 {
+        font-size: 1.15rem;
+    }
+}
     </style>
 
 </head>

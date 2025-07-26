@@ -348,6 +348,28 @@
         let userProfile = null;
         let chatHistorySubscription = null;
 
+        // --- UI HELPER FUNCTIONS ---
+        async function showAppUI(session) {
+            if (!session) return;
+            currentUser = session.user;
+            await loadUserProfile();
+            authContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            await loadChatHistory();
+            listenToChatHistory();
+        }
+
+        function showAuthUI() {
+            currentUser = null;
+            userProfile = null;
+            authContainer.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+            if (chatHistorySubscription) {
+                chatHistorySubscription.unsubscribe();
+                chatHistorySubscription = null;
+            }
+        }
+
         // --- AUTHENTICATION ---
         const loginForm = document.getElementById('login-form');
         const signupForm = document.getElementById('signup-form');
@@ -370,7 +392,6 @@
         });
 
         loginBtn.addEventListener('click', async () => {
-            // 1. Clear previous errors and provide user feedback
             authErrorDiv.textContent = '';
             loginBtn.disabled = true;
             loginBtn.textContent = 'Logging in...';
@@ -378,25 +399,12 @@
             try {
                 const email = document.getElementById('login-email').value;
                 const password = document.getElementById('login-password').value;
-
-                if (!email || !password) {
-                    throw new Error("Email and password are required.");
-                }
-
+                if (!email || !password) throw new Error("Email and password are required.");
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-                if (error) {
-                    // This will handle Supabase-specific errors like "Invalid login credentials"
-                    throw error;
-                }
-                // If successful, the onAuthStateChange listener will handle the UI update.
-                // We don't need to do anything else here.
-
+                if (error) throw error;
             } catch (error) {
-                // Catch any error (from validation or Supabase) and display it
                 authErrorDiv.textContent = error.message;
             } finally {
-                // 3. Re-enable the button regardless of outcome
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login';
             }
@@ -436,25 +444,25 @@
 
         // Listen for auth state changes
         supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_IN' && session) {
-                currentUser = session.user;
-                await loadUserProfile();
-                authContainer.classList.add('hidden');
-                appContainer.classList.remove('hidden');
-                await loadChatHistory();
-                listenToChatHistory();
-            } else if (event === 'SIGNED_OUT') {
-                currentUser = null;
-                userProfile = null;
-                authContainer.classList.remove('hidden');
-                appContainer.classList.add('hidden');
-                if (chatHistorySubscription) {
-                    chatHistorySubscription.unsubscribe();
-                    chatHistorySubscription = null;
-                }
+            if (session) {
+                await showAppUI(session);
+            } else {
+                showAuthUI();
             }
         });
         
+        // **NEW**: Check for an existing session on page load
+        async function checkInitialSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                await showAppUI(session);
+            } else {
+                showAuthUI();
+            }
+        }
+        
+        checkInitialSession(); // Run the check as soon as the script loads
+
         // --- PROFILE MANAGEMENT ---
         const updateProfileBtn = document.getElementById('update-profile-btn');
         const profileMessageDiv = document.getElementById('profile-message');
@@ -538,14 +546,11 @@
             chatHistorySubscription = supabase
                 .channel('public:chat_history')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_history', filter: `user_id=eq.${currentUser.id}` }, payload => {
-                    // Only append if it's an AI message to prevent duplicating user messages
                     if (payload.new.sender === 'ai') {
                         const lastMessage = chatHistoryEl.querySelector('.chat-message:last-child');
-                        // Check if the last message is a typing indicator and update it
                         if (lastMessage && lastMessage.querySelector('.typing-indicator')) {
                             lastMessage.querySelector('p').innerHTML = payload.new.content.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                         } else {
-                            // Otherwise, append a new message
                             appendMessage(payload.new.content, payload.new.sender, false);
                         }
                     }
@@ -558,12 +563,10 @@
             if (!prompt || !currentUser) return;
             chatInput.value = '';
 
-            // Add user message to UI and DB
             appendMessage(prompt, 'user', true);
             const typingIndicator = appendMessage('<div class="typing-indicator"><span></span><span></span><span></span></div>', 'ai', false);
 
             try {
-                // Call Supabase Edge Function for AI response
                 const { data, error } = await supabase.functions.invoke('text-generation', {
                     body: { prompt },
                 });
@@ -571,10 +574,7 @@
                 if (error) throw error;
                 
                 const aiResponse = data.response;
-                // The onSnapshot listener will update the UI, so we just need to insert the AI response to the DB.
-                // typingIndicator.querySelector('p').innerHTML = aiResponse.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                 
-                // Add AI response to DB, which will trigger the listener
                 const { error: insertError } = await supabase.from('chat_history').insert({
                     user_id: currentUser.id,
                     sender: 'ai',

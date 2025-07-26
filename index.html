@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3rabiano - AI Tool </title>
+    <title>3rabiano - AI Tool</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -452,6 +452,7 @@
 
         // This is the single source of truth for UI state.
         supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth event:', event, 'Session:', session); // For debugging
             if (session) {
                 await showAppUI(session);
             } else {
@@ -461,7 +462,9 @@
         
         // Check for an existing session on page load
         async function checkInitialSession() {
+            console.log("Checking for initial session on page load...");
             const { data: { session } } = await supabase.auth.getSession();
+            console.log("Initial session found:", session);
             if (session) {
                 await showAppUI(session);
             } else {

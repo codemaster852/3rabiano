@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3rabiano - AI Tool</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -401,14 +402,10 @@
                 const password = document.getElementById('login-password').value;
                 if (!email || !password) throw new Error("Email and password are required.");
                 
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
 
                 if (error) throw error;
                 
-                // This is the key fix: If the login is successful, the onAuthStateChange listener below
-                // will automatically be triggered with the new session, which then calls showAppUI.
-                // We don't need to do anything else here. If there's an error, it will be caught.
-
             } catch (error) {
                 authErrorDiv.textContent = error.message;
             } finally {
